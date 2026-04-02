@@ -3,23 +3,891 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mahathir Finance Tools</title>
+    <title>Mahathir | Finance & Data Analytics</title>
 
-    <!-- Bootstrap CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #111111;
+            --bg-card: #161616;
+            --bg-card-hover: #1c1c1c;
+            --border-color: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-muted: #6b6b6b;
+            --accent: #e0e0e0;
+            --accent-hover: #ffffff;
+            --tag-bg: #1a1a1a;
+            --tag-border: #333333;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* ── Navbar ── */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .navbar-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 0.25rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 0.4rem 0.5rem;
+        }
+
+        .navbar-links a {
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-links a:hover,
+        .navbar-links a.active {
+            color: var(--text-primary);
+            background: var(--bg-card-hover);
+        }
+
+        .navbar-cta {
+            padding: 0.55rem 1.4rem;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-cta:hover {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .hamburger span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: var(--text-primary);
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        /* ── Sections ── */
+        section {
+            padding: 6rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 3rem;
+        }
+
+        /* ── Hero ── */
+        .hero {
+            padding-top: 8rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4rem;
+            min-height: 100vh;
+        }
+
+        .hero-text {
+            flex: 1;
+        }
+
+        .hero-text .greeting {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .hero-text h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.15;
+            margin-bottom: 1.25rem;
+        }
+
+        .hero-text .description {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            line-height: 1.7;
+            max-width: 440px;
+            margin-bottom: 2rem;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.75rem;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .hero-cta:hover {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        .hero-socials {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .hero-socials a {
+            color: var(--text-secondary);
+            font-size: 1.3rem;
+            transition: color 0.3s ease;
+        }
+
+        .hero-socials a:hover {
+            color: var(--text-primary);
+        }
+
+        .hero-image {
+            flex: 0 0 auto;
+        }
+
+        .hero-image .headshot-wrapper {
+            width: 340px;
+            height: 400px;
+            border-radius: 24px;
+            overflow: hidden;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .headshot-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-muted);
+        }
+
+        .headshot-placeholder i {
+            font-size: 5rem;
+            color: var(--text-muted);
+        }
+
+        .headshot-placeholder span {
+            font-size: 0.85rem;
+        }
+
+        .hero-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* ── Cards Grid ── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: #3a3a3a;
+            background: var(--bg-card-hover);
+        }
+
+        .card h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.65;
+            margin-bottom: 1.25rem;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag {
+            padding: 0.35rem 0.9rem;
+            border-radius: 50px;
+            border: 1px solid var(--tag-border);
+            background: var(--tag-bg);
+            font-size: 0.78rem;
+            color: var(--text-secondary);
+        }
+
+        /* ── About ── */
+        .about-text {
+            text-align: center;
+            max-width: 760px;
+            margin: 0 auto 3rem;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        .approach-title {
+            text-align: center;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .approach-steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 3rem;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            padding: 0.85rem 1.5rem;
+        }
+
+        .step-num {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step span:last-child {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            margin-top: 2rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat .number {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.25rem;
+            font-weight: 700;
+        }
+
+        .stat .label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        /* ── Skills ── */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+        }
+
+        .skill-group {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.75rem;
+        }
+
+        .skill-group h4 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 1.25rem;
+        }
+
+        .skill-group .card-tags {
+            gap: 0.5rem;
+        }
+
+        /* ── Projects ── */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.25rem;
+        }
+
+        .project-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .project-card:hover {
+            border-color: #3a3a3a;
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+
+        .project-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--tag-bg);
+            border: 1px solid var(--tag-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .project-card h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .project-card p {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            line-height: 1.65;
+            margin-bottom: 1.25rem;
+            flex: 1;
+        }
+
+        .project-card .card-tags {
+            margin-bottom: 1.5rem;
+        }
+
+        .project-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: fit-content;
+        }
+
+        .project-btn:hover {
+            background: var(--text-primary);
+            color: var(--bg-primary);
+        }
+
+        /* ── Contact / Footer ── */
+        .contact {
+            text-align: center;
+            padding-bottom: 4rem;
+        }
+
+        .contact .section-title {
+            margin-bottom: 1rem;
+        }
+
+        .contact p {
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto 2rem;
+            font-size: 0.95rem;
+        }
+
+        .contact-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 2rem;
+            border-radius: 50px;
+            border: 1px solid var(--border-color);
+            background: var(--text-primary);
+            color: var(--bg-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .contact-btn:hover {
+            background: transparent;
+            color: var(--text-primary);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-size: 0.82rem;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .cards-grid,
+            .skills-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .projects-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-links {
+                display: none;
+                position: absolute;
+                top: 70px;
+                left: 1rem;
+                right: 1rem;
+                flex-direction: column;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: 16px;
+                padding: 1rem;
+            }
+
+            .navbar-links.open {
+                display: flex;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .navbar-cta {
+                display: none;
+            }
+
+            .hero {
+                flex-direction: column;
+                text-align: center;
+                padding-top: 7rem;
+                gap: 2.5rem;
+                min-height: auto;
+            }
+
+            .hero-text h1 {
+                font-size: 2.4rem;
+            }
+
+            .hero-text .description {
+                margin: 0 auto 2rem;
+            }
+
+            .hero-socials {
+                justify-content: center;
+            }
+
+            .hero-image .headshot-wrapper {
+                width: 260px;
+                height: 310px;
+            }
+
+            .cards-grid,
+            .skills-grid,
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .approach-steps {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                flex-direction: column;
+                gap: 1.5rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+    </style>
 </head>
 <body>
 
-    <div class="container text-center mt-5">
-        <h1 class="mb-3">Finance Tools</h1>
-        <p class="lead">Built with Python & Data Analytics</p>
-
-        <div class="card mt-4 p-4">
-            <h3>Amortization Calculator</h3>
-            <p>Coming soon...</p>
-            <button class="btn btn-primary">Launch Tool</button>
+    <!-- ── Navbar ── -->
+    <nav class="navbar">
+        <div class="navbar-logo">MF</div>
+        <div class="navbar-links" id="navLinks">
+            <a href="#home" class="active">Home</a>
+            <a href="#services">Services</a>
+            <a href="#about">About</a>
+            <a href="#skills">Skills</a>
+            <a href="#projects">Projects</a>
         </div>
-    </div>
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+        <a href="#contact" class="navbar-cta">Let's Talk</a>
+    </nav>
+
+    <!-- ── Hero ── -->
+    <section class="hero" id="home">
+        <div class="hero-text">
+            <p class="greeting">I am Mahathir</p>
+            <h1>Finance &<br>Data Analytics<br>Professional</h1>
+            <p class="description">Building powerful financial tools and data-driven solutions that simplify complex calculations and help people make smarter money decisions.</p>
+            <button class="hero-cta" onclick="document.getElementById('projects').scrollIntoView({behavior:'smooth'})">
+                <i class="bi bi-arrow-down-circle"></i> View Projects
+            </button>
+            <div class="hero-socials">
+                <a href="https://linkedin.com" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="bi bi-linkedin"></i></a>
+                <a href="https://github.com/mxm6990" target="_blank" rel="noopener" aria-label="GitHub"><i class="bi bi-github"></i></a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="headshot-wrapper">
+                <!-- Replace this div with an <img> tag pointing to your headshot -->
+                <div class="headshot-placeholder">
+                    <i class="bi bi-person-fill"></i>
+                    <span>Add your headshot</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Services ── -->
+    <section id="services">
+        <h2 class="section-title">Services</h2>
+        <p class="section-subtitle">Building financial tools & data-driven solutions</p>
+
+        <div class="cards-grid">
+            <div class="card">
+                <h3>Financial Modeling</h3>
+                <p>Comprehensive amortization schedules, loan comparisons, and payment breakdowns with clear, accurate calculations.</p>
+                <div class="card-tags">
+                    <span class="tag">Loan Analysis</span>
+                    <span class="tag">Amortization</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Data Analytics</h3>
+                <p>Turning raw financial data into actionable insights with Python-based analytics and visualization pipelines.</p>
+                <div class="card-tags">
+                    <span class="tag">Python</span>
+                    <span class="tag">Pandas</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Interactive Dashboards</h3>
+                <p>Clean, responsive web interfaces that present complex financial data in intuitive, user-friendly formats.</p>
+                <div class="card-tags">
+                    <span class="tag">Data Viz</span>
+                    <span class="tag">Responsive UI</span>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Web Development</h3>
+                <p>Full-stack web applications purpose-built for financial tools, calculators, and data presentation.</p>
+                <div class="card-tags">
+                    <span class="tag">HTML / CSS / JS</span>
+                    <span class="tag">Bootstrap</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── About ── -->
+    <section id="about">
+        <h2 class="section-title">About Me</h2>
+        <p class="about-text">I'm a finance-focused developer passionate about building clean, intuitive tools that demystify complex financial concepts. I combine data analytics with modern web development to create calculators and dashboards that help people understand loans, investments, and personal finance.</p>
+
+        <h3 class="approach-title">My Approach</h3>
+        <div class="approach-steps">
+            <div class="step">
+                <span class="step-num">01</span>
+                <span>Research & model the math</span>
+            </div>
+            <div class="step">
+                <span class="step-num">02</span>
+                <span>Build clean, tested tools</span>
+            </div>
+            <div class="step">
+                <span class="step-num">03</span>
+                <span>Deploy & iterate on feedback</span>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="number">02+</div>
+                <div class="label">Years Of Experience</div>
+            </div>
+            <div class="stat">
+                <div class="number">15+</div>
+                <div class="label">Projects Completed</div>
+            </div>
+            <div class="stat">
+                <div class="number">05+</div>
+                <div class="label">Clients Served</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Skills ── -->
+    <section id="skills">
+        <h2 class="section-title">Skills</h2>
+        <p class="section-subtitle">Building financial tools with clean code & data analytics</p>
+
+        <div class="skills-grid">
+            <div class="skill-group">
+                <h4>Core Skills</h4>
+                <div class="card-tags">
+                    <span class="tag">Financial Modeling</span>
+                    <span class="tag">Data Analytics</span>
+                    <span class="tag">Loan Analysis</span>
+                    <span class="tag">Risk Assessment</span>
+                </div>
+            </div>
+            <div class="skill-group">
+                <h4>Languages & Frameworks</h4>
+                <div class="card-tags">
+                    <span class="tag">Python</span>
+                    <span class="tag">HTML</span>
+                    <span class="tag">CSS</span>
+                    <span class="tag">JavaScript</span>
+                    <span class="tag">Bootstrap</span>
+                </div>
+            </div>
+            <div class="skill-group">
+                <h4>Data & Analytics</h4>
+                <div class="card-tags">
+                    <span class="tag">Pandas</span>
+                    <span class="tag">NumPy</span>
+                    <span class="tag">Matplotlib</span>
+                    <span class="tag">Excel</span>
+                </div>
+            </div>
+            <div class="skill-group">
+                <h4>Tools & Platforms</h4>
+                <div class="card-tags">
+                    <span class="tag">GitHub</span>
+                    <span class="tag">Git</span>
+                    <span class="tag">VS Code</span>
+                    <span class="tag">GitHub Pages</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Projects ── -->
+    <section id="projects">
+        <h2 class="section-title">Projects</h2>
+        <p class="section-subtitle">Financial tools I've built</p>
+
+        <div class="projects-grid">
+            <div class="project-card">
+                <div class="project-icon"><i class="bi bi-calculator"></i></div>
+                <h3>Amortization Calculator</h3>
+                <p>Full loan amortization schedule generator with monthly breakdowns of principal, interest, and remaining balance.</p>
+                <div class="card-tags">
+                    <span class="tag">Python</span>
+                    <span class="tag">Finance</span>
+                    <span class="tag">Web App</span>
+                </div>
+                <button class="project-btn" onclick="alert('Amortization Calculator — Coming Soon!')">
+                    Launch Tool <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+            <div class="project-card">
+                <div class="project-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                <h3>Investment Tracker</h3>
+                <p>Track portfolio performance, visualize returns over time, and compare against market benchmarks.</p>
+                <div class="card-tags">
+                    <span class="tag">Analytics</span>
+                    <span class="tag">Data Viz</span>
+                </div>
+                <button class="project-btn" onclick="alert('Investment Tracker — Coming Soon!')">
+                    Launch Tool <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+            <div class="project-card">
+                <div class="project-icon"><i class="bi bi-piggy-bank"></i></div>
+                <h3>Savings Goal Planner</h3>
+                <p>Plan and project savings goals with compound interest calculations and flexible contribution schedules.</p>
+                <div class="card-tags">
+                    <span class="tag">Planning</span>
+                    <span class="tag">Compound Interest</span>
+                </div>
+                <button class="project-btn" onclick="alert('Savings Goal Planner — Coming Soon!')">
+                    Launch Tool <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── Contact ── -->
+    <section class="contact" id="contact">
+        <h2 class="section-title">Let's Connect</h2>
+        <p>Have a finance project in mind or want to collaborate? I'd love to hear from you.</p>
+        <a href="mailto:hello@example.com" class="contact-btn">
+            <i class="bi bi-envelope"></i> Get In Touch
+        </a>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer>
+        &copy; 2026 Mahathir Finance Tools. All rights reserved.
+    </footer>
+
+    <script>
+        // Mobile nav toggle
+        document.getElementById('hamburger').addEventListener('click', function () {
+            document.getElementById('navLinks').classList.toggle('open');
+        });
+
+        // Close mobile nav on link click
+        document.querySelectorAll('.navbar-links a').forEach(function (link) {
+            link.addEventListener('click', function () {
+                document.getElementById('navLinks').classList.remove('open');
+            });
+        });
+
+        // Active nav link highlight on scroll
+        var sections = document.querySelectorAll('section');
+        var navLinks = document.querySelectorAll('.navbar-links a');
+
+        window.addEventListener('scroll', function () {
+            var scrollPos = window.scrollY + 120;
+            sections.forEach(function (section) {
+                if (section.offsetTop <= scrollPos && section.offsetTop + section.offsetHeight > scrollPos) {
+                    navLinks.forEach(function (link) {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === '#' + section.id) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
