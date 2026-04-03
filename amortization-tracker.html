@@ -1,0 +1,164 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amortization Tracker — Mahathir Mahbub</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+
+<body class="tool-page">
+
+  <header class="site-header">
+    <div class="container-narrow header-inner">
+      <a href="index.html" class="logo-mark">mm</a>
+      <nav class="nav-pill">
+        <a href="index.html">Home</a>
+        <a href="index.html#tools">Tools</a>
+        <a href="index.html#about">About</a>
+        <a href="index.html#skills">Skills</a>
+      </nav>
+      <a class="btn-pill" href="index.html#contact">Let's Talk</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="container-narrow">
+      <h1 class="page-title">Amortization Tracker</h1>
+
+      <!-- 3 rows: radio/payment parses/graph -->
+      <div class="amort-grid">
+        <!-- LEFT: INPUTS (spans all 3 rows) -->
+        <section class="tool-card amort-inputs">
+          <h2 class="amort-section-title">Inputs</h2>
+
+          <div class="amort-field">
+            <label for="loanAmount">Loan Amount</label>
+            <input class="amort-input" type="number" id="loanAmount" placeholder="100000">
+          </div>
+
+          <div class="amort-field" style="margin-top: 1rem;">
+            <label for="interestRate">Interest Rate (%)</label>
+            <input class="amort-input" type="number" id="interestRate" placeholder="5">
+          </div>
+
+          <div class="amort-field" style="margin-top: 1rem;">
+            <label for="loanTerm">Loan Term (years)</label>
+            <input class="amort-input" type="number" id="loanTerm" placeholder="30">
+          </div>
+
+          <div class="amort-field" style="margin-top: 1rem;">
+            <label for="downPayment">Down Payment (%)</label>
+            <input class="amort-input" type="number" id="downPayment" placeholder="20">
+          </div>
+
+          <div class="amort-actions">
+            <button class="btn-rect" onclick="calculateAmortization()" type="button">Generate</button>
+          </div>
+        </section>
+
+        <!-- RIGHT ROW 1: radio buttons (layout placeholder for future modes) -->
+        <section class="tool-card amort-radio">
+          <h2 class="amort-section-title">Payment Mode</h2>
+          <div class="amort-radio-group" role="radiogroup" aria-label="Payment mode">
+            <label class="amort-radio-option">
+              <input type="radio" name="paymentMode" value="standard" checked>
+              <span>Standard amortization</span>
+            </label>
+            <label class="amort-radio-option">
+              <input type="radio" name="paymentMode" value="extra">
+              <span>Extra payments (coming soon)</span>
+            </label>
+          </div>
+        </section>
+
+        <!-- RIGHT ROW 2: payment parses (summary KPIs + table) -->
+        <section class="tool-card amort-payments">
+          <h2 class="amort-section-title">Payment Summary</h2>
+
+          <div class="amort-kpis">
+            <div class="amort-kpi">
+              <div class="amort-kpi-label">Monthly Payment</div>
+              <div id="monthlyPayment" class="amort-kpi-value"></div>
+            </div>
+            <div class="amort-kpi">
+              <div class="amort-kpi-label">Total Payment</div>
+              <div id="totalPayment" class="amort-kpi-value"></div>
+            </div>
+            <div class="amort-kpi">
+              <div class="amort-kpi-label">Total Interest</div>
+              <div id="totalInterest" class="amort-kpi-value"></div>
+            </div>
+            <div class="amort-kpi">
+              <div class="amort-kpi-label">Down Payment</div>
+              <div id="downPaymentDisplay" class="amort-kpi-value"></div>
+            </div>
+            <div class="amort-kpi">
+              <div class="amort-kpi-label">Loan Amount</div>
+              <div id="loanAmountDisplay" class="amort-kpi-value"></div>
+            </div>
+          </div>
+
+          <div class="amort-table-wrap" aria-label="Amortization table">
+            <table id="amortizationTable" class="amort-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Payment</th>
+                  <th>Principal</th>
+                  <th>Interest</th>
+                  <th>Balance</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- RIGHT ROW 3: graph -->
+        <section class="tool-card amort-chart">
+          <h2 class="amort-section-title">Amortization Graph</h2>
+          <div style="width: 100%; max-width: 720px;">
+            <canvas id="amortizationChart"></canvas>
+          </div>
+        </section>
+      </div>
+
+      <!-- INFO SECTION -->
+      <div style="margin-top: 50px; max-width: 600px;">
+        <p class="page-lead">
+          Schedule generation, extra payments, and export-friendly tables will live here. Wire this page to your calculator UI when it's ready.
+        </p>
+
+        <div class="tool-placeholder">
+          <p><strong>Upcoming features:</strong> loan amount, rate, term inputs and a full amortization table.</p>
+          <p style="margin-top: 1rem;">
+            <a href="index.html" class="btn-rect">
+              Back to home
+            </a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container-narrow">
+      <p><a href="index.html" style="color: inherit;">← Home</a></p>
+      <div class="footer-theme-row">
+        <button id="themeToggle" class="btn-pill theme-toggle-btn" type="button">Light mode</button>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="script.js"></script>
+  <script src="assets/theme.js"></script>
+
+</body>
+</html>
