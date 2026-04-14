@@ -26,9 +26,10 @@
 
   <main>
     <div class="container-narrow">
-      <h1 class="page-title">Discounted cash flow</h1>
+      <p class="hero-eyebrow dcf-eyebrow">Valuation Tool</p>
+      <h1 class="page-title">Discounted Cash Flow (DCF)</h1>
       <p class="page-lead">
-        Project free cash flows, discount at your WACC, and add a terminal value—all in the browser so you avoid cross-origin requests to a separate API.
+        Estimate enterprise and equity value from projected free cash flow assumptions. Adjust the inputs and run the model instantly.
       </p>
 
       <p id="dcfError" class="dcf-error" role="alert" hidden></p>
@@ -36,30 +37,33 @@
       <div class="dcf-grid">
         <section class="tool-card dcf-panel" aria-labelledby="dcf-inputs-heading">
           <h2 id="dcf-inputs-heading" class="amort-section-title">Assumptions</h2>
+          <p class="dcf-panel-intro">Enter your base case assumptions for cash flow growth, discount rate, and capital structure.</p>
 
-          <div class="dcf-field">
-            <label for="fcf0">Year 1 FCF ($)</label>
-            <input class="amort-input" type="number" id="fcf0" value="1000000" min="0" step="1000">
-          </div>
-          <div class="dcf-field">
-            <label for="fcfGrowth">Annual FCF growth (explicit period) (%)</label>
-            <input class="amort-input" type="number" id="fcfGrowth" value="5" step="0.1">
-          </div>
-          <div class="dcf-field">
-            <label for="years">Explicit forecast years</label>
-            <input class="amort-input" type="number" id="years" value="5" min="1" max="30" step="1">
-          </div>
-          <div class="dcf-field">
-            <label for="wacc">WACC (%)</label>
-            <input class="amort-input" type="number" id="wacc" value="10" min="0.01" step="0.1">
-          </div>
-          <div class="dcf-field">
-            <label for="tg">Terminal growth (%)</label>
-            <input class="amort-input" type="number" id="tg" value="2.5" step="0.1">
-          </div>
-          <div class="dcf-field">
-            <label for="netDebt">Net debt ($)</label>
-            <input class="amort-input" type="number" id="netDebt" value="0" step="1000">
+          <div class="dcf-fields-wrap">
+            <div class="dcf-field">
+              <label for="fcf0">Year 1 free cash flow ($)</label>
+              <input class="amort-input" type="number" id="fcf0" value="1000000" min="0" step="1000">
+            </div>
+            <div class="dcf-field">
+              <label for="fcfGrowth">Annual FCF growth during forecast period (%)</label>
+              <input class="amort-input" type="number" id="fcfGrowth" value="5" step="0.1">
+            </div>
+            <div class="dcf-field">
+              <label for="years">Forecast period (years)</label>
+              <input class="amort-input" type="number" id="years" value="5" min="1" max="30" step="1">
+            </div>
+            <div class="dcf-field">
+              <label for="wacc">Discount rate (WACC, %)</label>
+              <input class="amort-input" type="number" id="wacc" value="10" min="0.01" step="0.1">
+            </div>
+            <div class="dcf-field">
+              <label for="tg">Terminal growth rate (%)</label>
+              <input class="amort-input" type="number" id="tg" value="2.5" step="0.1">
+            </div>
+            <div class="dcf-field">
+              <label for="netDebt">Net debt ($)</label>
+              <input class="amort-input" type="number" id="netDebt" value="0" step="1000">
+            </div>
           </div>
 
           <div class="dcf-actions">
@@ -69,13 +73,14 @@
 
         <section class="tool-card dcf-panel" aria-labelledby="dcf-results-heading">
           <h2 id="dcf-results-heading" class="amort-section-title">Results</h2>
+          <p class="dcf-panel-intro">Calculated values update when you run the model.</p>
           <dl class="dcf-kpis">
             <div class="dcf-kpi">
-              <dt>PV of explicit FCFs</dt>
+              <dt>Present value of forecast cash flows</dt>
               <dd id="pvExplicit">—</dd>
             </div>
             <div class="dcf-kpi">
-              <dt>PV of terminal value</dt>
+              <dt>Present value of terminal value</dt>
               <dd id="pvTerminal">—</dd>
             </div>
             <div class="dcf-kpi">
@@ -83,12 +88,12 @@
               <dd id="enterpriseValue">—</dd>
             </div>
             <div class="dcf-kpi dcf-kpi-highlight">
-              <dt>Equity value (EV − net debt)</dt>
+              <dt>Equity value (enterprise value minus net debt)</dt>
               <dd id="equityValue">—</dd>
             </div>
           </dl>
           <p class="dcf-note">
-            Terminal value uses a perpetuity: FCF<sub>n</sub> × (1 + g) ÷ (WACC − g), discounted to today. Ensure WACC exceeds terminal growth for a meaningful result.
+            Terminal value uses a perpetual-growth approach: FCF<sub>n</sub> × (1 + g) ÷ (WACC − g), discounted to present value. Use a terminal growth rate below WACC.
           </p>
           <p style="margin-top: 1.25rem;">
             <a href="index.html" class="btn-rect">Back to home</a>
