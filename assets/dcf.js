@@ -78,4 +78,10 @@ function runDCF() {
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("dcfRun");
   if (btn) btn.addEventListener("click", runDCF);
+  const inputIds = ["fcf0", "fcfGrowth", "years", "wacc", "tg", "netDebt"];
+  inputIds.forEach((id) => {
+    const input = document.getElementById(id);
+    if (input) input.addEventListener("input", runDCF);
+  });
+  runDCF();
 });
