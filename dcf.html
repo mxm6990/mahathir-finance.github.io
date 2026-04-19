@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
   <title>DCF Analyzer — Mahathir Mahbub</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,6 +15,16 @@
 
 <body class="tool-page dcf-page">
 
+=======
+  <title>DCF Valuation — Mahathir Mahbub</title>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="tool-page">
+>>>>>>> 5ff1ce74b54c27d68adbefbd3d282bfce9b58062
   <header class="site-header">
     <div class="container-narrow header-inner">
       <a href="index.html" class="logo-mark" aria-label="Home">mm</a>
@@ -29,6 +40,7 @@
 
   <main>
     <div class="container-narrow">
+<<<<<<< HEAD
       <h1 class="page-title">DCF Analyzer</h1>
       <p class="page-lead amort-page-intro">
         Enter tickers and assumptions, run <strong>Generate model</strong> to pull data and build FCF, then use <strong>Run DCF</strong> or APV as needed.
@@ -332,6 +344,76 @@
 
       <div class="mt-4 mb-2">
         <a href="index.html" class="btn btn-outline-secondary">Back to home</a>
+=======
+      <h1 class="page-title">Discounted cash flow</h1>
+      <p class="page-lead">
+        Project free cash flows, discount at your WACC, and add a terminal value—all in the browser so you avoid cross-origin requests to a separate API.
+      </p>
+
+      <p id="dcfError" class="dcf-error" role="alert" hidden></p>
+
+      <div class="dcf-grid">
+        <section class="tool-card dcf-panel" aria-labelledby="dcf-inputs-heading">
+          <h2 id="dcf-inputs-heading" class="amort-section-title">Assumptions</h2>
+
+          <div class="dcf-field">
+            <label for="fcf0">Year 1 FCF ($)</label>
+            <input class="amort-input" type="number" id="fcf0" value="1000000" min="0" step="1000">
+          </div>
+          <div class="dcf-field">
+            <label for="fcfGrowth">Annual FCF growth (explicit period) (%)</label>
+            <input class="amort-input" type="number" id="fcfGrowth" value="5" step="0.1">
+          </div>
+          <div class="dcf-field">
+            <label for="years">Explicit forecast years</label>
+            <input class="amort-input" type="number" id="years" value="5" min="1" max="30" step="1">
+          </div>
+          <div class="dcf-field">
+            <label for="wacc">WACC (%)</label>
+            <input class="amort-input" type="number" id="wacc" value="10" min="0.01" step="0.1">
+          </div>
+          <div class="dcf-field">
+            <label for="tg">Terminal growth (%)</label>
+            <input class="amort-input" type="number" id="tg" value="2.5" step="0.1">
+          </div>
+          <div class="dcf-field">
+            <label for="netDebt">Net debt ($)</label>
+            <input class="amort-input" type="number" id="netDebt" value="0" step="1000">
+          </div>
+
+          <div class="dcf-actions">
+            <button class="btn-rect" id="dcfRun" type="button">Run DCF</button>
+          </div>
+        </section>
+
+        <section class="tool-card dcf-panel" aria-labelledby="dcf-results-heading">
+          <h2 id="dcf-results-heading" class="amort-section-title">Results</h2>
+          <dl class="dcf-kpis">
+            <div class="dcf-kpi">
+              <dt>PV of explicit FCFs</dt>
+              <dd id="pvExplicit">—</dd>
+            </div>
+            <div class="dcf-kpi">
+              <dt>PV of terminal value</dt>
+              <dd id="pvTerminal">—</dd>
+            </div>
+            <div class="dcf-kpi">
+              <dt>Enterprise value</dt>
+              <dd id="enterpriseValue">—</dd>
+            </div>
+            <div class="dcf-kpi dcf-kpi-highlight">
+              <dt>Equity value (EV − net debt)</dt>
+              <dd id="equityValue">—</dd>
+            </div>
+          </dl>
+          <p class="dcf-note">
+            Terminal value uses a perpetuity: FCF<sub>n</sub> × (1 + g) ÷ (WACC − g), discounted to today. Ensure WACC exceeds terminal growth for a meaningful result.
+          </p>
+          <p style="margin-top: 1.25rem;">
+            <a href="index.html" class="btn-rect">Back to home</a>
+          </p>
+        </section>
+>>>>>>> 5ff1ce74b54c27d68adbefbd3d282bfce9b58062
       </div>
     </div>
   </main>
@@ -345,9 +427,13 @@
     </div>
   </footer>
 
+<<<<<<< HEAD
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="dcf.js"></script>
+=======
+  <script src="assets/dcf.js"></script>
+>>>>>>> 5ff1ce74b54c27d68adbefbd3d282bfce9b58062
   <script src="assets/theme.js"></script>
 </body>
 </html>

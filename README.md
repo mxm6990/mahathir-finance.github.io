@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 📊 Mahathir Finance Platform
 
 A full-stack financial analysis platform combining Python-based financial modeling with an interactive web interface.
@@ -44,3 +45,6 @@ This project transforms complex financial concepts like valuation, forecasting, 
 
 ### 🔹 Backend (Python)
 Modular financial modeling system:
+=======
+# mahathir-finance.github.io
+>>>>>>> 5ff1ce74b54c27d68adbefbd3d282bfce9b58062

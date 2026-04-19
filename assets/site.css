@@ -524,6 +524,7 @@ a {
   padding: 0.6rem 1.1rem;
 }
 
+<<<<<<< HEAD
 /* Amortization comparison (3 scenarios) — do not reuse .amort-inputs on scenario cards */
 .amort-comparison-layout {
   display: flex;
@@ -703,6 +704,8 @@ html:not([data-theme="light"]) .tool-page main .btn-outline-secondary:hover {
   max-width: 720px;
 }
 
+=======
+>>>>>>> 5ff1ce74b54c27d68adbefbd3d282bfce9b58062
 /* Amortization tracker page */
 .amort-grid {
   display: grid;
@@ -878,6 +881,7 @@ html:not([data-theme="light"]) .tool-page main .btn-outline-secondary:hover {
   color: var(--muted);
 }
 
+<<<<<<< HEAD
 /* DCF Analyzer — input grid + themed tables (matches amortization tool cards) */
 .dcf-input-layout {
   display: grid;
@@ -896,10 +900,23 @@ html:not([data-theme="light"]) .tool-page main .btn-outline-secondary:hover {
 
 @media (max-width: 1060px) {
   .dcf-input-layout {
+=======
+/* DCF tool */
+.dcf-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .dcf-grid {
+>>>>>>> 5ff1ce74b54c27d68adbefbd3d282bfce9b58062
     grid-template-columns: 1fr;
   }
 }
 
+<<<<<<< HEAD
 .dcf-section-card .amort-section-title {
   margin-top: 0;
 }
@@ -1286,6 +1303,91 @@ html:not([data-theme="light"]) .tool-page main .btn-outline-secondary:hover {
   border: 1px solid #d8d8d8;
   border-radius: var(--radius-lg);
   padding: 0.75rem 0.75rem 0.25rem;
+=======
+.dcf-panel {
+  padding: 1.5rem 1.35rem;
+}
+
+.dcf-field {
+  margin-top: 0.85rem;
+}
+
+.dcf-field:first-of-type {
+  margin-top: 0;
+}
+
+.dcf-field label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 0.35rem;
+}
+
+.dcf-actions {
+  margin-top: 1.35rem;
+}
+
+.dcf-error {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.9rem;
+}
+
+[data-theme="light"] .dcf-error {
+  color: #b91c1c;
+  background: rgba(185, 28, 28, 0.06);
+  border-color: rgba(185, 28, 28, 0.25);
+}
+
+.dcf-kpis {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.dcf-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.dcf-kpi:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.dcf-kpi dt {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.dcf-kpi dd {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.dcf-kpi-highlight dd {
+  font-size: 1.5rem;
+}
+
+.dcf-note {
+  margin: 1.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.55;
+>>>>>>> 5ff1ce74b54c27d68adbefbd3d282bfce9b58062
 }
 
 /* Mobile nav */
