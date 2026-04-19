@@ -16,11 +16,8 @@
 
   function setTheme(theme) {
     rootEl.dataset.theme = theme;
-<<<<<<< HEAD
     // Bootstrap 5.3 color mode (form controls, tables) on pages that load Bootstrap
     rootEl.setAttribute("data-bs-theme", theme === "light" ? "light" : "dark");
-=======
->>>>>>> 5ff1ce74b54c27d68adbefbd3d282bfce9b58062
 
     const btn = document.getElementById("themeToggle");
     if (btn) btn.textContent = theme === "dark" ? "Light mode" : "Dark mode";
