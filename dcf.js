@@ -1,13 +1,52 @@
 const API = "https://mahathir-finance-github-io.onrender.com";
 
+function clearCache() {
+  for (let key in CACHE) delete CACHE[key];
+}
+
+let controller;
+
+function resetController() {
+  if (controller) controller.abort();
+  controller = new AbortController();
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const CACHE = {};
+
+async function cachedFetch(url, options, key) {
+
+  if (CACHE[key]) return CACHE[key];
+
+  const promise = fetchWithRetry(url, options);
+
+  CACHE[key] = promise;
+
+  try {
+    const data = await promise;
+    CACHE[key] = data;
+    return data;
+  } catch (err) {
+    delete CACHE[key]; // ✅ GOOD (you already did this)
+    throw err;
+  }
+}
+
+
 async function fetchWithRetry(url, options, retries = 2, delay = 1000) {
   for (let i = 0; i <= retries; i++) {
     try {
-      const res = await fetch(url, options);
+      const res = await fetch(url, {
+        ...options,
+        signal: controller ? controller.signal : undefined
+      });
 
       // 🚨 RATE LIMIT HANDLING
       if (res.status === 429) {
-        const wait = delay * (i + 2); // exponential-ish
+        const wait = delay * (i + 2);
         console.warn(`⏳ Rate limited. Waiting ${wait}ms...`);
         await sleep(wait);
         continue;
@@ -27,6 +66,12 @@ async function fetchWithRetry(url, options, retries = 2, delay = 1000) {
       return await res.json();
 
     } catch (err) {
+
+      // 🚫 DO NOT retry cancelled requests
+      if (err.name === "AbortError") {
+        console.warn("Request cancelled");
+        throw err;
+      }
 
       if (i === retries) {
         console.error("❌ Final failure:", err);
@@ -269,17 +314,21 @@ async function runDCF() {
 
   try {
 
-    const res = await fetch(`${API}/dcf`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        fcf,
-        discount_rate: discountRate,
-        terminal_growth: GLOBAL_G
-      })
-    });
+ const raw = await cachedFetch(
+  `${API}/dcf`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      fcf,
+      discount_rate: r,
+      terminal_growth: g
+    })
+  },
+  `dcf-${r}-${g}-${fcf[0]}`
+);
 
-    const raw = await res.json();
+// const raw = await res.json();
 
     if (raw.error) {
       document.getElementById("result").innerText = "Error: " + raw.error;
@@ -445,17 +494,17 @@ for (let g of gValues) {
 
   for (let r of rValues) {
 
-    const res = await fetch(`${API}/dcf`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        fcf,
-        discount_rate: r,
-        terminal_growth: g
-      })
-    });
+  const raw = await fetchWithRetry(`${API}/dcf`, {
+  method: "POST",
+  headers: {"Content-Type":"application/json"},
+  body: JSON.stringify({
+    fcf,
+    discount_rate: r,
+    terminal_growth: g
+  })
+});
 
-    const raw = await res.json();
+// const raw = await res.json();
     const data = (raw.growth && typeof raw.growth === "object")
       ? raw.growth
       : raw;
@@ -498,11 +547,15 @@ async function getBeta(tickerInput) {
   detailsEl.innerHTML = "";
 
   try {
-    const data = await fetchWithRetry(`${API}/beta`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ ticker })
-    });
+    const data = await cachedFetch(
+  `${API}/beta`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ ticker })
+  },
+  `beta-${ticker}`
+);
 
     if (data.error) {
       resultEl.innerText = "Error: " + data.error;
@@ -548,13 +601,15 @@ async function autoForecast(tickerInput, peerTickers = null) {
   detailsEl.innerHTML = "";
 
   try {
-    const fundamentalsRes = await fetch(`${API}/fundamentals`, {
+    const fundamentalsRes = await cachedFetch(`${API}/fundamentals`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
-    });
+    },
+  `fundamentals-${ticker}`
+  );
 
-    const fundamentals = await fundamentalsRes.json();
+    const fundamentals = fundamentalsRes;
     if (fundamentals.error) {
       resultEl.innerText = "Error: " + fundamentals.error;
       throw new Error(fundamentals.error);
@@ -563,26 +618,29 @@ async function autoForecast(tickerInput, peerTickers = null) {
     GLOBAL_SHARES = (fundamentals?.shares || 0) / 1e6;
     GLOBAL_NET_DEBT = ((fundamentals?.debt || 0) - (fundamentals?.cash || 0)) / 1e6;
 
-    const compsRes = await fetch(`${API}/comps`, {
+    const compsRes = await cachedFetch(`${API}/comps`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
         tickers: peerTickers || [ticker]
-      })
+      },
+    `comps-${ticker}`)
     });
 
-    const compsData = await compsRes.json();
+    const compsData = compsRes;
     if (compsData.error) {
       resultEl.innerText = "Comps error: " + compsData.error;
       throw new Error(compsData.error);
     }
-    const modelRes = await fetch(`${API}/full_model`, {
+    const modelRes = await cachedFetch(`${API}/full_model`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
-    });
+    },
+    `full_model-${ticker}`
+  );
 
-    const model = await modelRes.json();
+    const model = modelRes;
     if (model.error) {
       resultEl.innerText = "Model error: " + model.error;
       throw new Error(model.error);
@@ -717,13 +775,15 @@ async function loadFullModel(tickerInput) {
   tableEl.innerHTML = '<p class="text-block-muted mb-0">Loading…</p>';
 
   try {
-    const res = await fetch(`${API}/full_model`, {
+    const res = await cachedFetch(`${API}/full_model`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
-    });
+    },
+  `full_model-${ticker}`
+  );
 
-    const data = await res.json();
+    const data = res;
 
     if (data.error) {
       tableEl.innerHTML = "Error: " + data.error;
@@ -873,13 +933,17 @@ async function loadPeerBeta(customTickers = null) {
 
   try {
 
-    const res = await fetch(`${API}/peer_beta`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ tickers })
-    });
+    const data = await cachedFetch(
+  `${API}/peer_beta`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ tickers })
+  },
+  `peer_beta-${tickers.join("-")}`
+);
 
-    const data = await res.json();
+    // const data = res;
 
     loadingEl.style.display = "none";
 
@@ -951,16 +1015,20 @@ async function loadWACC(tickerInput) {
 
   try {
 
-    const res = await fetch(`${API}/wacc`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        ticker: ticker,
-        beta: GLOBAL_BETA
-      })
-    });
+    const data = await cachedFetch(
+  `${API}/wacc`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      ticker: ticker,
+      beta: GLOBAL_BETA
+    })
+  },
+  `wacc-${ticker}-${GLOBAL_BETA}`
+);
 
-    const data = await res.json();
+    // const data = res;
 
     if (data.error) {
       resultEl.innerHTML = "Error: " + data.error;
@@ -998,13 +1066,17 @@ async function loadWACC(tickerInput) {
 
 async function loadStockPrice(ticker) {
   try {
-    const res = await fetch(`${API}/price`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ ticker })
-    });
+    const data = await cachedFetch(
+  `${API}/price`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ ticker })
+  },
+  `price-${ticker}`
+);
 
-    const data = await res.json();
+    // const data = res;
     GLOBAL_PRICE = data.price ?? null;
 
   } catch (err) {
@@ -1013,7 +1085,10 @@ async function loadStockPrice(ticker) {
   }
 }
 async function generateModel() {
-
+  
+  clearCache();
+  resetController();
+  
   const ticker =
     document.getElementById("mainTicker")?.value || "AAPL";
 
@@ -1030,61 +1105,52 @@ async function generateModel() {
   }
 
   const btn = document.getElementById("btnGenerateModel");
-  const panel = document.getElementById("dcfPipelinePanel");
-  const statusEl = document.getElementById("dcfPipelineStatus");
 
   __dcfGenerating = true;
   if (btn) btn.disabled = true;
-  if (panel) panel.hidden = false;
-  if (statusEl) statusEl.textContent = "Running…";
-  dcfShowSkeletons();
-  dcfResetPipelineList();
-  dcfSetPipelineProgress(0, DCF_PIPELINE_STEPS.length);
 
-  const steps = [
-    { id: "beta", fn: () => getBeta(ticker) },
-    { id: "peerBeta", fn: () => loadPeerBeta(peers) },
-    { id: "fullModel", fn: () => loadFullModel(ticker) },
-    { id: "wacc", fn: () => loadWACC(ticker) },
-    { id: "comps", fn: () => autoForecast(ticker, peers) },
-    { id: "dcf", fn: () => runDCF() },
-    { id: "apv", fn: () => runAPV() },
-    { id: "stockPrice", fn: () => loadStockPrice(ticker) },
-    { id: "football", fn: () => { renderFootballField(); } },
-    { id: "stockChart", fn: () => renderStockChart(ticker) },
-    { id: "summary", fn: () => { renderSummary(); } }
-  ];
-
-  const revealBeforeIndex = 8;
-  let okCount = 0;
   try {
-    for (let i = 0; i < steps.length; i++) {
 
-  if (i === revealBeforeIndex) {
-    dcfRevealPanels();
-  }
+    // =========================
+    // 🚀 GROUP 1 (PARALLEL)
+    // =========================
+    await Promise.all([
+      dcfRunPipelineStep("beta", () => getBeta(ticker)),
+      dcfRunPipelineStep("peerBeta", () => loadPeerBeta(peers)),
+      dcfRunPipelineStep("fullModel", () => loadFullModel(ticker)),
+      dcfRunPipelineStep("stockPrice", () => loadStockPrice(ticker))
+    ]);
 
-  const stepId = steps[i].id;
+    await sleep(1200); // small buffer
 
-  const ok = await dcfRunPipelineStep(stepId, steps[i].fn);
+    // =========================
+    // 🚀 GROUP 2 (PARALLEL)
+    // =========================
+    await Promise.all([
+      dcfRunPipelineStep("wacc", () => loadWACC(ticker)),
+      dcfRunPipelineStep("comps", () => autoForecast(ticker, peers))
+    ]);
 
-  if (ok) okCount++;
+    await sleep(1200);
 
-  dcfSetPipelineProgress(i + 1, steps.length);
+    // =========================
+    // 🚀 GROUP 3 (SEQUENTIAL)
+    // =========================
+    await dcfRunPipelineStep("dcf", () => runDCF());
+    await dcfRunPipelineStep("apv", () => runAPV());
 
-  // 🔥 SMART THROTTLING (heavier calls wait longer)
-  if (stepId === "beta" || stepId === "peerBeta") {
-    await sleep(2000); // heavy yfinance calls
-  } else if (stepId === "wacc" || stepId === "comps") {
-    await sleep(1500); // medium weight
-  } else {
-    await sleep(1000); // light calls
-  }
-}
+    // =========================
+    // 🎨 UI / CHARTS
+    // =========================
+    renderFootballField();
+    await renderStockChart(ticker);
+    renderSummary();
+
+  } catch (err) {
+    console.error("Pipeline failed:", err);
   } finally {
     __dcfGenerating = false;
     if (btn) btn.disabled = false;
-    dcfRevealPanels();
   }
 }
 async function runAPV() {
@@ -1101,16 +1167,20 @@ async function runAPV() {
     const ticker =
       document.getElementById("mainTicker")?.value || "AAPL";
 
-    const res = await fetch(`${API}/wacc`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        ticker: ticker,
-        beta: GLOBAL_BETA
-      })
-    });
+    const data = await cachedFetch(
+  `${API}/wacc`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      ticker: ticker,
+      beta: GLOBAL_BETA
+    })
+  },
+  `wacc-${ticker}-${GLOBAL_BETA}`
+);
 
-    const data = await res.json();
+    // const data = res;
 
     if (data.error) {
       resultEl.innerHTML = "Error: " + data.error;
@@ -1422,13 +1492,17 @@ async function renderStockChart(ticker) {
 
   try {
 
-    const res = await fetch(`${API}/price_history`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ ticker })
-    });
+    const data = await cachedFetch(
+  `${API}/price_history`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ ticker })
+  },
+  `price_history-${ticker}`
+);
 
-    const data = await res.json();
+    // const data = res;
 
     if (data.error) {
       console.error(data.error);
