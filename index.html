@@ -3,229 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mahathir Mahbub — Finance &amp; IST @ Penn State</title>
   <title>Mahathir Mahbub — Finance & Analytics</title>
-  <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/site.css">
-  <style>
-    /* Home page only — resume layout & motion */
-    .resume-hero {
-      --stagger: 0.08s;
-    }
-    .resume-hero-inner > * {
-      opacity: 0;
-      animation: resumeFadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    }
-    .resume-hero-inner > *:nth-child(1) { animation-delay: calc(var(--stagger) * 0); }
-    .resume-hero-inner > *:nth-child(2) { animation-delay: calc(var(--stagger) * 1); }
-    .resume-hero-inner > *:nth-child(3) { animation-delay: calc(var(--stagger) * 2); }
-    .resume-hero-inner > *:nth-child(4) { animation-delay: calc(var(--stagger) * 3); }
-    .resume-hero-inner > *:nth-child(5) { animation-delay: calc(var(--stagger) * 4); }
-    .resume-hero-visual {
-      opacity: 0;
-      animation: resumeFadeIn 0.9s ease 0.35s forwards;
-    }
-    @keyframes resumeFadeUp {
-      from {
-        opacity: 0;
-        transform: translateY(14px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    @keyframes resumeFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    .resume-subtitle {
-      font-size: 1.05rem;
-      font-weight: 500;
-      color: var(--muted);
-      margin: 0 0 0.5rem;
-      line-height: 1.45;
-    }
-    .resume-meta-line {
-      font-size: 0.9rem;
-      color: var(--muted);
-      margin: 0 0 1.75rem;
-      line-height: 1.5;
-      max-width: 38ch;
-    }
-    @media (max-width: 900px) {
-      .resume-meta-line { max-width: none; margin-inline: auto; }
-    }
-    .resume-cta-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.65rem;
-      align-items: center;
-      margin-bottom: 1rem;
-    }
-    .resume-cta-row .btn-rect {
-      min-width: 7.5rem;
-      justify-content: center;
-    }
-    .section-head--left {
-      text-align: left;
-      margin-left: 0;
-      margin-right: auto;
-      max-width: 640px;
-    }
-    .about-prose {
-      max-width: 720px;
-      margin: 0 auto;
-      color: var(--muted);
-      font-size: 1.02rem;
-      line-height: 1.75;
-    }
-    .about-prose p + p {
-      margin-top: 1.1rem;
-    }
-    .highlight-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 1rem;
-    }
-    .highlight-card {
-      background: var(--surface-elevated);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 1.25rem 1.35rem;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-    .highlight-card:hover {
-      border-color: #404040;
-      transform: translateY(-2px);
-    }
-    [data-theme="light"] .highlight-card:hover {
-      border-color: #c8c8c8;
-    }
-    .resume-timeline {
-      position: relative;
-      max-width: 720px;
-      margin: 0 auto;
-      padding-left: 1.25rem;
-      border-left: 2px solid var(--border);
-    }
-    .resume-timeline-item {
-      position: relative;
-      padding-bottom: 2.25rem;
-      padding-left: 1.5rem;
-    }
-    .resume-timeline-item:last-child {
-      padding-bottom: 0;
-    }
-    .resume-timeline-item::before {
-      content: "";
-      position: absolute;
-      left: calc(-1.25rem - 5px);
-      top: 0.35rem;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--text);
-      border: 2px solid var(--bg);
-      box-shadow: 0 0 0 1px var(--border);
-    }
-    .resume-role-title {
-      font-size: 1.05rem;
-      font-weight: 600;
-      margin: 0 0 0.65rem;
-      letter-spacing: -0.02em;
-    }
-    .resume-role-list {
-      margin: 0;
-      padding-left: 1.15rem;
-      color: var(--muted);
-      font-size: 0.95rem;
-      line-height: 1.65;
-    }
-    .resume-role-list li + li {
-      margin-top: 0.35rem;
-    }
-    .project-card-resume {
-      transition: border-color 0.2s, transform 0.22s, box-shadow 0.22s;
-    }
-    .project-card-resume:hover {
-      border-color: #404040;
-      transform: translateY(-4px);
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-    }
-    [data-theme="light"] .project-card-resume:hover {
-      border-color: #c8c8c8;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
-    }
-    .project-card-resume ul {
-      margin: 0;
-      padding-left: 1.1rem;
-      color: var(--muted);
-      font-size: 0.9rem;
-      line-height: 1.6;
-    }
-    .project-card-resume li + li {
-      margin-top: 0.35rem;
-    }
-    .skills-grouped {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.25rem;
-      max-width: 900px;
-      margin: 0 auto;
-    }
-    .skills-group {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 1.35rem 1.5rem;
-    }
-    .skills-group h3 {
-      font-size: 0.8rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--muted);
-      margin: 0 0 0.85rem;
-    }
-    .skills-group .skill-tags span {
-      display: inline-block;
-      margin: 0.2rem 0.35rem 0.2rem 0;
-    }
-    .interests-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      justify-content: center;
-      max-width: 560px;
-      margin: 0 auto;
-    }
-    .interest-chip {
-      font-size: 0.875rem;
-      padding: 0.4rem 0.85rem;
-      border-radius: var(--radius-pill);
-      border: 1px solid var(--border);
-      background: var(--surface);
-      color: var(--muted);
-    }
-    .site-footer-minimal p {
-      margin: 0.35rem 0;
-      font-size: 0.9rem;
-      color: var(--muted);
-    }
-    .site-footer-minimal .footer-line {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem 1.5rem;
-      justify-content: space-between;
-      align-items: center;
-    }
-  </style>
 </head>
 <body>
   <header class="site-header">
@@ -233,14 +15,6 @@
       <a href="index.html" class="logo-mark" aria-label="Home">mm</a>
       <nav class="nav-pill" aria-label="Primary">
         <a href="#home">Home</a>
-        <a href="#about">About</a>
-        <a href="#highlights">Highlights</a>
-        <a href="#experience">Experience</a>
-        <a href="#projects">Projects</a>
-        <a href="#skills">Skills</a>
-        <a href="#interests">Interests</a>
-      </nav>
-      <a class="btn-pill" href="#contact">Contact</a>
         <a href="#tools">Tools</a>
         <a href="#about">About</a>
         <a href="#skills">Skills</a>
@@ -250,21 +24,6 @@
   </header>
 
   <main id="home">
-    <section class="hero resume-hero">
-      <div class="container-narrow hero-grid">
-        <div class="hero-copy resume-hero-inner">
-          <h1>Mahathir Mahbub</h1>
-          <p class="resume-subtitle">Finance + Information Sciences &amp; Technology @ Penn State</p>
-          <p class="resume-meta-line">Financial Analyst Intern @ Lycoming Engines | Microeconomic Analysis GSG Leader @ Penn State</p>
-          <div class="resume-cta-row hero-actions" style="margin-bottom: 0;">
-            <a class="btn-rect" href="https://github.com/mxm6990" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <a class="btn-rect" href="https://www.linkedin.com/in/mahathir-mahbub-590289229/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-            <a class="btn-rect" href="mailto:mahathirmahbubimf@gmail.com">Email</a>
-          </div>
-        </div>
-        <div class="hero-visual resume-hero-visual">
-          <div class="hero-photo-wrap">
-            <img src="assets/portrait2.jpg" width="640" height="800" alt="Portrait of Mahathir Mahbub">
     <section class="hero">
       <div class="container-narrow hero-grid">
         <div class="hero-copy">
@@ -294,152 +53,6 @@
       </div>
     </section>
 
-    <section id="about" class="section">
-      <div class="container-narrow">
-        <div class="section-head section-head--left">
-          <h2>About</h2>
-          <p>A little about how I think and what I&apos;m building toward.</p>
-        </div>
-        <div class="about-prose">
-          <p>I&apos;m interested in the intersection of finance, technology, and data-driven decision making.</p>
-          <p>Right now I&apos;m building financial analytics tools and exploring how systems can be optimized through data—from IT risk frameworks to investment analysis and user-centered financial applications.</p>
-          <p>I like taking ideas from concept to execution through hands-on projects with Python, data visualization, and web development. There&apos;s something satisfying about shipping something you can click through or rerun with new inputs.</p>
-          <p>Long term, I&apos;m aiming toward fintech, financial analytics, and tools that scale—ones that solve real problems for real users, not just slide decks.</p>
-        </div>
-      </div>
-    </section>
-
-    <section id="highlights" class="section">
-      <div class="container-narrow">
-        <div class="section-head">
-          <h2>Highlights</h2>
-          <p>A quick scan of roles, study, and a few things I&apos;m proud of.</p>
-        </div>
-        <div class="highlight-grid">
-          <div class="highlight-card">Double major in <strong>Finance</strong> and <strong>Information Sciences &amp; Technology</strong> (Penn State)</div>
-          <div class="highlight-card"><strong>Financial Analyst Intern</strong> at Lycoming Engines (Textron Systems)</div>
-          <div class="highlight-card"><strong>UX Designer</strong> for an IT risk assessment tool (NLNB)</div>
-          <div class="highlight-card"><strong>Finalist</strong> — Penn State REIT Competition</div>
-          <div class="highlight-card"><strong>Research Assistant</strong> — Penn State</div>
-          <div class="highlight-card"><strong>Teaching Assistant for Quadratic Mathematics</strong> — Penn State</div>
-          <div class="highlight-card"><strong>2nd Position</strong> — Penn State Sustainability Case Study Competition 2025</div>
-          <div class="highlight-card"><strong>Commodities Analyst Intern</strong> at DB Group FZCO (Dubai, UAE)</div>
-          <div class="highlight-card"><strong>Database Intern</strong> at Digicon Limited (Dhaka, Bangladesh)</div>
-        
-        </div>
-      </div>
-    </section>
-
-    <section id="experience" class="section">
-      <div class="container-narrow">
-        <div class="section-head">
-          <h2>Experience</h2>
-          <p>Where I&apos;ve spent time lately—reporting, design systems, and research support.</p>
-        </div>
-        <div class="resume-timeline">
-          <article class="resume-timeline-item">
-            <h3 class="resume-role-title">Financial Analyst Intern — Lycoming Engines</h3>
-            <ul class="resume-role-list">
-              <li>Managed daily cash reporting</li>
-              <li>Processed payments and bank transactions</li>
-              <li>Built Excel-based financial tools</li>
-              <li>Supported SOX audit processes</li>
-            </ul>
-          </article>
-          <article class="resume-timeline-item">
-            <h3 class="resume-role-title">UX Designer — IT Risk Assessment Tool (NLNB)</h3>
-            <ul class="resume-role-list">
-              <li>Designed UI for an enterprise risk tool</li>
-              <li>Built a scoring model framework</li>
-              <li>Worked with a cross-functional team</li>
-            </ul>
-          </article>
-          <article class="resume-timeline-item">
-            <h3 class="resume-role-title">Research Assistant — Penn State</h3>
-            <ul class="resume-role-list">
-              <li>Supported PPIRA opioid crisis research and proposal development</li>
-              <li>Identified funding opportunities from government and private agencies</li>
-              <li>Assisted grant writing and strategic funding outreach efforts</li>
-            </ul>
-          </article>
-          <article class="resume-timeline-item">
-            <h3 class="resume-role-title">Teaching Assistant — Penn State</h3>
-            <ul class="resume-role-list">
-              <li>Assisted professor in teaching business mathematics concepts</li>
-              <li>Tutored students in calculus, management, marketing, accounting</li>
-              <li>Developed teamwork and adaptive teaching skills</li>
-            </ul>
-          </article>
-             <article class="resume-timeline-item">
-            <h3 class="resume-role-title">Database Intern — Digicon Limited</h3>
-            <ul class="resume-role-list">
-              <li>Built database system project for e-commerce platform</li>
-              <li>Assisted data collection, storage, and reporting queries</li>
-              <li>Maintained structured data for operational reporting</li>
-            </ul>
-          </article>
-            <article class="resume-timeline-item">
-            <h3 class="resume-role-title">Commodities Intern — DB Group FZCO</h3>
-            <ul class="resume-role-list">
-              <li>Analyzed market data and pricing indicators</li>
-              <li>Developed insights for portfolio-level trading discussions</li>
-              <li>Simulated trades using Plus500 for market exposure</li>
-            </ul>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="projects" class="section">
-      <div class="container-narrow">
-        <div class="section-head">
-          <h2>Projects</h2>
-          <p>Hands-on builds that mix finance, code, and clear presentation—several live on this site.</p>
-        </div>
-        <div class="cards-row" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
-          <article class="tool-card project-card-resume">
-            <h3>Financial Analytics Web App</h3>
-            <p>Personal toolkit for interactive models and scenario work in the browser.</p>
-            <ul>
-              <li>Interactive amortization tools</li>
-              <li>Scenario comparison models</li>
-              <li>Built with Python and JavaScript</li>
-            </ul>
-            <div class="card-pills" style="margin-top: auto;">
-              <a href="amortization-tracker.html">Amortization</a>
-              <a href="dcf.html">DCF</a>
-            </div>
-          </article>
-          <article class="tool-card project-card-resume">
-            <h3>Amortization Comparison Engine</h3>
-            <p>Side-by-side loan views to compare outcomes before committing to a structure.</p>
-            <ul>
-              <li>Multi-loan comparison</li>
-              <li>Visualization of loan outcomes</li>
-            </ul>
-            <div class="card-pills" style="margin-top: auto;">
-              <a href="amortization-comparison.html">Open tool</a>
-            </div>
-          </article>
-          <article class="tool-card project-card-resume">
-            <h3>Stock Beta Calculator</h3>
-            <p>Regression-based beta from market and stock returns—good for sanity-checking names.</p>
-            <ul>
-              <li>Python model using yfinance and statsmodels</li>
-              <li>Regression-based beta calculation</li>
-            </ul>
-            <div class="card-pills" style="margin-top: auto;">
-              <a href="sharpe-ratio.html">Related tools</a>
-            </div>
-          </article>
-          <article class="tool-card project-card-resume">
-            <h3>AI + Finance Exploration</h3>
-            <p>Early experiments at the edge of LLMs and market data—more lab notebook than product.</p>
-            <ul>
-              <li>Early ideas for an AI-assisted research workflow</li>
-              <li>LLM and financial data experimentation</li>
-            </ul>
-          </article>
     <section id="tools" class="section">
       <div class="container-narrow">
         <div class="section-head">
@@ -466,13 +79,6 @@
             <p>Compare risk-adjusted returns and scenario assumptions for portfolios.</p>
             <div class="card-pills">
               <a href="sharpe-ratio.html">Run Analysis</a>
-            </div>
-          </article>
-          <article class="tool-card">
-            <h3>DCF Valuation</h3>
-            <p>Discount projected free cash flows in the browser—no separate API server required.</p>
-            <div class="card-pills">
-              <a href="dcf.html">Open DCF</a>
             </div>
           </article>
         </div>
@@ -509,7 +115,7 @@
         </div>
         <div class="stats-row">
           <div>
-            <div class="stat-val">4+</div>
+            <div class="stat-val">3+</div>
             <div class="stat-label">Active tools on this site</div>
           </div>
           <div>
@@ -528,52 +134,6 @@
       <div class="container-narrow">
         <div class="section-head">
           <h2>Skills</h2>
-          <p>Grouped the way I&apos;d list them on a one-page résumé.</p>
-        </div>
-        <div class="skills-grouped">
-          <div class="skills-group">
-            <h3>Languages</h3>
-            <div class="skill-tags">
-              <span>Python</span>
-              <span>SQL</span>
-              <span>JavaScript</span>
-              <span>HTML/CSS</span>
-            </div>
-          </div>
-          <div class="skills-group">
-            <h3>Tools</h3>
-            <div class="skill-tags">
-              <span>Excel</span>
-              <span>Power BI</span>
-              <span>Oracle</span>
-              <span>Figma</span>
-            </div>
-          </div>
-          <div class="skills-group">
-            <h3>Libraries</h3>
-            <div class="skill-tags">
-              <span>Pandas</span>
-              <span>NumPy</span>
-              <span>Matplotlib</span>
-              <span>Statsmodels</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="interests" class="section">
-      <div class="container-narrow">
-        <div class="section-head">
-          <h2>Interests</h2>
-          <p>Off the clock, I tend to make the most out of my day...</p>
-        </div>
-        <div class="interests-chips" role="list">
-          <span class="interest-chip" role="listitem">Finance</span>
-          <span class="interest-chip" role="listitem">Ukulele</span>
-          <span class="interest-chip" role="listitem">Gaming</span>
-          <span class="interest-chip" role="listitem">Geopolitics</span>
-          <span class="interest-chip" role="listitem">Pickleball</span>
           <p>Stacks and habits I reach for when building these projects.</p>
         </div>
         <div class="skills-grid">
@@ -619,11 +179,6 @@
 
     <section id="contact" class="section">
       <div class="container-narrow section-head" style="margin-bottom: 0;">
-        <h2>Contact</h2>
-        <p>
-          Email me at
-          <a href="mailto:mahathirmahbubimf@gmail.com" style="text-decoration: underline;">mahathirmahbubimf@gmail.com</a>
-          or message on LinkedIn—I&apos;m happy to chat about internships, projects, or collaboration.
         <h2>Let&apos;s talk</h2>
         <p>
           Reach out via
@@ -634,18 +189,6 @@
     </section>
   </main>
 
-  <footer class="site-footer site-footer-minimal">
-    <div class="container-narrow">
-      <div class="footer-line">
-        <div>
-          <p><strong style="color: var(--text); font-weight: 600;">Mahathir Mahbub</strong></p>
-          <p>mahathirmahbubimf@gmail.com · State College, PA</p>
-        </div>
-        <div class="footer-theme-row" style="margin: 0;">
-          <button id="themeToggle" class="btn-pill theme-toggle-btn" type="button">Light mode</button>
-        </div>
-      </div>
-      <p style="margin-top: 1.25rem; font-size: 0.8rem; opacity: 0.85;">&copy; <span id="y"></span> Personal site.</p>
   <footer class="site-footer">
     <div class="container-narrow">
       <p>&copy; <span id="y"></span> Mahathir Mahbub. Personal homepage.</p>
