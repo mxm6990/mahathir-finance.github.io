@@ -1,8 +1,14 @@
 const API = "https://mahathir-finance-github-io.onrender.com";
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 function clearCache() {
   for (let key in CACHE) delete CACHE[key];
 }
+
+
 
 let controller;
 
