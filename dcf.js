@@ -1,4 +1,4 @@
-// Chart.register(ChartDataLabels);
+const API = "https://mahathir-finance-github-io.onrender.com";
 // ======================
 // Global state
 // ======================
@@ -229,7 +229,7 @@ async function runDCF() {
 
   try {
 
-    const res = await fetch("http://127.0.0.1:5001/dcf", {
+    const res = await fetch(`${API}/dcf`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
@@ -405,7 +405,7 @@ async function buildSensitivityTable(fcf) {
 
     for (let r of rValues) {
 
-      const res = await fetch("http://127.0.0.1:5001/dcf", {
+      const res = await fetch(`${API}/dcf`, {
         method: "POST",
         headers: {"Content-Type":"application/json"},
         body: JSON.stringify({
@@ -452,7 +452,7 @@ async function getBeta(tickerInput) {
   detailsEl.innerHTML = "";
 
   try {
-    const res = await fetch("http://127.0.0.1:5001/beta", {
+    const res = await fetch(`${API}/beta`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
@@ -504,7 +504,7 @@ async function autoForecast(tickerInput, peerTickers = null) {
   detailsEl.innerHTML = "";
 
   try {
-    const fundamentalsRes = await fetch("http://127.0.0.1:5001/fundamentals", {
+    const fundamentalsRes = await fetch(`${API}/fundamentals`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
@@ -519,7 +519,7 @@ async function autoForecast(tickerInput, peerTickers = null) {
     GLOBAL_SHARES = (fundamentals?.shares || 0) / 1e6;
     GLOBAL_NET_DEBT = ((fundamentals?.debt || 0) - (fundamentals?.cash || 0)) / 1e6;
 
-    const compsRes = await fetch("http://127.0.0.1:5001/comps", {
+    const compsRes = await fetch(`${API}/comps`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
@@ -532,7 +532,7 @@ async function autoForecast(tickerInput, peerTickers = null) {
       resultEl.innerText = "Comps error: " + compsData.error;
       throw new Error(compsData.error);
     }
-    const modelRes = await fetch("http://127.0.0.1:5001/full_model", {
+    const modelRes = await fetch(`${API}/full_model`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
@@ -673,7 +673,7 @@ async function loadFullModel(tickerInput) {
   tableEl.innerHTML = '<p class="text-block-muted mb-0">Loading…</p>';
 
   try {
-    const res = await fetch("http://127.0.0.1:5001/full_model", {
+    const res = await fetch(`${API}/full_model`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
@@ -829,7 +829,7 @@ async function loadPeerBeta(customTickers = null) {
 
   try {
 
-    const res = await fetch("http://127.0.0.1:5001/peer_beta", {
+    const res = await fetch(`${API}/peer_beta`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ tickers })
@@ -907,7 +907,7 @@ async function loadWACC(tickerInput) {
 
   try {
 
-    const res = await fetch("http://127.0.0.1:5001/wacc", {
+    const res = await fetch(`${API}/wacc`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
@@ -954,7 +954,7 @@ async function loadWACC(tickerInput) {
 
 async function loadStockPrice(ticker) {
   try {
-    const res = await fetch("http://127.0.0.1:5001/price", {
+    const res = await fetch(`${API}/price`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
@@ -1046,7 +1046,7 @@ async function runAPV() {
     const ticker =
       document.getElementById("mainTicker")?.value || "AAPL";
 
-    const res = await fetch("http://127.0.0.1:5001/wacc", {
+    const res = await fetch(`${API}/wacc`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
@@ -1367,7 +1367,7 @@ async function renderStockChart(ticker) {
 
   try {
 
-    const res = await fetch("http://127.0.0.1:5001/price_history", {
+    const res = await fetch(`${API}/price_history`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
