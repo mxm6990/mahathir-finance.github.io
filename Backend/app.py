@@ -185,6 +185,14 @@ def price_api():
         return jsonify({"error": str(e)}), 500
 
 # =========================
+# ROOT ROUTE (HEALTH CHECK)
+# =========================
+@app.route("/")
+def home():
+    return "API is running 🚀"
+
+
+# =========================
 # RUN SERVER
 # =========================
 if __name__ == "__main__":

@@ -1,4 +1,8 @@
 const API = "https://mahathir-finance-github-io.onrender.com";
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 // ======================
 // Global state
 // ======================
@@ -399,37 +403,43 @@ async function buildSensitivityTable(fcf) {
 
   html += "</tr></thead><tbody>";
 
-  for (let g of gValues) {
+for (let g of gValues) {
 
-    html += `<tr><th scope="row">${(g * 100).toFixed(1)}%</th>`;
+  html += `<tr><th scope="row">${(g * 100).toFixed(1)}%</th>`;
 
-    for (let r of rValues) {
+  for (let r of rValues) {
 
-      const res = await fetch(`${API}/dcf`, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-          fcf,
-          discount_rate: r,
-          terminal_growth: g
-        })
-      });
+    const res = await fetch(`${API}/dcf`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({
+        fcf,
+        discount_rate: r,
+        terminal_growth: g
+      })
+    });
 
-      const raw = await res.json();
-      const data = (raw.growth && typeof raw.growth === "object")
-        ? raw.growth
-        : raw;
-      const value = data.enterprise_value ?? 0;
+    const raw = await res.json();
+    const data = (raw.growth && typeof raw.growth === "object")
+      ? raw.growth
+      : raw;
+    const value = data.enterprise_value ?? 0;
 
-      let color = lightMode ? "rgba(255, 193, 7, 0.42)" : "rgba(255, 193, 7, 0.15)";
-      if (r < baseR && g > baseG) color = lightMode ? "rgba(25, 135, 84, 0.38)" : "rgba(25, 135, 84, 0.2)";
-      if (r > baseR && g < baseG) color = lightMode ? "rgba(220, 53, 69, 0.32)" : "rgba(220, 53, 69, 0.15)";
+    let color = lightMode ? "rgba(255, 193, 7, 0.42)" : "rgba(255, 193, 7, 0.15)";
+    if (r < baseR && g > baseG) color = lightMode ? "rgba(25, 135, 84, 0.38)" : "rgba(25, 135, 84, 0.2)";
+    if (r > baseR && g < baseG) color = lightMode ? "rgba(220, 53, 69, 0.32)" : "rgba(220, 53, 69, 0.15)";
 
-      html += `<td style="background:${color}">$${Math.round(value).toLocaleString()}</td>`;
-    }
+    html += `<td style="background:${color}">$${Math.round(value).toLocaleString()}</td>`;
 
-    html += "</tr>";
+    // 🔥 THROTTLE EACH CELL REQUEST
+    await sleep(300);
   }
+
+  html += "</tr>";
+
+  // 🔥 EXTRA DELAY BETWEEN ROWS
+  await sleep(500);
+}
 
   table.innerHTML = html + "</tbody>";
 }
@@ -1015,17 +1025,28 @@ async function generateModel() {
   let okCount = 0;
   try {
     for (let i = 0; i < steps.length; i++) {
-      if (i === revealBeforeIndex) {
-        dcfRevealPanels();
-      }
-      const ok = await dcfRunPipelineStep(steps[i].id, steps[i].fn);
-      if (ok) okCount++;
-      dcfSetPipelineProgress(i + 1, steps.length);
-    }
-    if (statusEl) {
-      statusEl.textContent = "Finished: " + okCount + "/" + steps.length + " steps succeeded.";
-    }
-    setTimeout(dcfResizeCharts, 100);
+
+  if (i === revealBeforeIndex) {
+    dcfRevealPanels();
+  }
+
+  const stepId = steps[i].id;
+
+  const ok = await dcfRunPipelineStep(stepId, steps[i].fn);
+
+  if (ok) okCount++;
+
+  dcfSetPipelineProgress(i + 1, steps.length);
+
+  // 🔥 SMART THROTTLING (heavier calls wait longer)
+  if (stepId === "beta" || stepId === "peerBeta") {
+    await sleep(2000); // heavy yfinance calls
+  } else if (stepId === "wacc" || stepId === "comps") {
+    await sleep(1500); // medium weight
+  } else {
+    await sleep(1000); // light calls
+  }
+}
   } finally {
     __dcfGenerating = false;
     if (btn) btn.disabled = false;
