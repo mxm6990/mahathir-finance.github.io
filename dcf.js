@@ -1,7 +1,43 @@
 const API = "https://mahathir-finance-github-io.onrender.com";
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+async function fetchWithRetry(url, options, retries = 2, delay = 1000) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, options);
+
+      // 🚨 RATE LIMIT HANDLING
+      if (res.status === 429) {
+        const wait = delay * (i + 2); // exponential-ish
+        console.warn(`⏳ Rate limited. Waiting ${wait}ms...`);
+        await sleep(wait);
+        continue;
+      }
+
+      // ❌ HARD FAIL (don't retry)
+      if (res.status >= 400 && res.status < 500) {
+        const text = await res.text();
+        throw new Error(`Client Error ${res.status}: ${text}`);
+      }
+
+      // ❌ SERVER FAIL (retry)
+      if (!res.ok) {
+        throw new Error(`Server Error ${res.status}`);
+      }
+
+      return await res.json();
+
+    } catch (err) {
+
+      if (i === retries) {
+        console.error("❌ Final failure:", err);
+        throw err;
+      }
+
+      const wait = delay * (i + 1);
+      console.warn(`Retrying in ${wait}ms...`);
+      await sleep(wait);
+    }
+  }
 }
 // ======================
 // Global state
@@ -450,10 +486,10 @@ for (let g of gValues) {
 async function getBeta(tickerInput) {
 
   const ticker =
-  tickerInput ||
-  document.getElementById("ticker")?.value ||
-  document.getElementById("mainTicker")?.value ||
-  "AAPL";
+    tickerInput ||
+    document.getElementById("ticker")?.value ||
+    document.getElementById("mainTicker")?.value ||
+    "AAPL";
 
   const resultEl = document.getElementById("betaResult");
   const detailsEl = document.getElementById("betaDetails");
@@ -462,13 +498,11 @@ async function getBeta(tickerInput) {
   detailsEl.innerHTML = "";
 
   try {
-    const res = await fetch(`${API}/beta`, {
+    const data = await fetchWithRetry(`${API}/beta`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
     });
-
-    const data = await res.json();
 
     if (data.error) {
       resultEl.innerText = "Error: " + data.error;
