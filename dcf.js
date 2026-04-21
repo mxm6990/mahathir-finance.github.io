@@ -1,4 +1,95 @@
-// Chart.register(ChartDataLabels);
+const API = "https://mahathir-finance-github-io.onrender.com";
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function clearCache() {
+  for (let key in CACHE) delete CACHE[key];
+}
+
+
+
+let controller;
+
+function resetController() {
+  if (controller) controller.abort();
+  controller = new AbortController();
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const CACHE = {};
+
+async function cachedFetch(url, options, key) {
+
+  if (CACHE[key]) return CACHE[key];
+
+  const promise = fetchWithRetry(url, options);
+
+  CACHE[key] = promise;
+
+  try {
+    const data = await promise;
+    CACHE[key] = data;
+    return data;
+  } catch (err) {
+    delete CACHE[key]; // ✅ GOOD (you already did this)
+    throw err;
+  }
+}
+
+
+async function fetchWithRetry(url, options, retries = 2, delay = 1000) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, {
+        ...options,
+        signal: controller ? controller.signal : undefined
+      });
+
+      // 🚨 RATE LIMIT HANDLING
+      if (res.status === 429) {
+        const wait = delay * (i + 2);
+        console.warn(`⏳ Rate limited. Waiting ${wait}ms...`);
+        await sleep(wait);
+        continue;
+      }
+
+      // ❌ HARD FAIL (don't retry)
+      if (res.status >= 400 && res.status < 500) {
+        const text = await res.text();
+        throw new Error(`Client Error ${res.status}: ${text}`);
+      }
+
+      // ❌ SERVER FAIL (retry)
+      if (!res.ok) {
+        throw new Error(`Server Error ${res.status}`);
+      }
+
+      return await res.json();
+
+    } catch (err) {
+
+      // 🚫 DO NOT retry cancelled requests
+      if (err.name === "AbortError") {
+        console.warn("Request cancelled");
+        throw err;
+      }
+
+      if (i === retries) {
+        console.error("❌ Final failure:", err);
+        throw err;
+      }
+
+      const wait = delay * (i + 1);
+      console.warn(`Retrying in ${wait}ms...`);
+      await sleep(wait);
+    }
+  }
+}
 // ======================
 // Global state
 // ======================
@@ -246,17 +337,21 @@ async function runDCF() {
 
   try {
 
-    const res = await fetch("http://127.0.0.1:5001/dcf", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        fcf,
-        discount_rate: discountRate,
-        terminal_growth: GLOBAL_G
-      })
-    });
+ const raw = await cachedFetch(
+  `${API}/dcf`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      fcf,
+      discount_rate: r,
+      terminal_growth: g
+    })
+  },
+  `dcf-${r}-${g}-${fcf[0]}`
+);
 
-    const raw = await res.json();
+// const raw = await res.json();
 
     if (raw.error) {
       document.getElementById("result").innerText = "Error: " + raw.error;
@@ -416,37 +511,43 @@ async function buildSensitivityTable(fcf) {
 
   html += "</tr></thead><tbody>";
 
-  for (let g of gValues) {
+for (let g of gValues) {
 
-    html += `<tr><th scope="row">${(g * 100).toFixed(1)}%</th>`;
+  html += `<tr><th scope="row">${(g * 100).toFixed(1)}%</th>`;
 
-    for (let r of rValues) {
+  for (let r of rValues) {
 
-      const res = await fetch("http://127.0.0.1:5001/dcf", {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-          fcf,
-          discount_rate: r,
-          terminal_growth: g
-        })
-      });
+  const raw = await fetchWithRetry(`${API}/dcf`, {
+  method: "POST",
+  headers: {"Content-Type":"application/json"},
+  body: JSON.stringify({
+    fcf,
+    discount_rate: r,
+    terminal_growth: g
+  })
+});
 
-      const raw = await res.json();
-      const data = (raw.growth && typeof raw.growth === "object")
-        ? raw.growth
-        : raw;
-      const value = data.enterprise_value ?? 0;
+// const raw = await res.json();
+    const data = (raw.growth && typeof raw.growth === "object")
+      ? raw.growth
+      : raw;
+    const value = data.enterprise_value ?? 0;
 
-      let color = lightMode ? "rgba(255, 193, 7, 0.42)" : "rgba(255, 193, 7, 0.15)";
-      if (r < baseR && g > baseG) color = lightMode ? "rgba(25, 135, 84, 0.38)" : "rgba(25, 135, 84, 0.2)";
-      if (r > baseR && g < baseG) color = lightMode ? "rgba(220, 53, 69, 0.32)" : "rgba(220, 53, 69, 0.15)";
+    let color = lightMode ? "rgba(255, 193, 7, 0.42)" : "rgba(255, 193, 7, 0.15)";
+    if (r < baseR && g > baseG) color = lightMode ? "rgba(25, 135, 84, 0.38)" : "rgba(25, 135, 84, 0.2)";
+    if (r > baseR && g < baseG) color = lightMode ? "rgba(220, 53, 69, 0.32)" : "rgba(220, 53, 69, 0.15)";
 
-      html += `<td style="background:${color}">$${Math.round(value).toLocaleString()}</td>`;
-    }
+    html += `<td style="background:${color}">$${Math.round(value).toLocaleString()}</td>`;
 
-    html += "</tr>";
+    // 🔥 THROTTLE EACH CELL REQUEST
+    await sleep(300);
   }
+
+  html += "</tr>";
+
+  // 🔥 EXTRA DELAY BETWEEN ROWS
+  await sleep(500);
+}
 
   table.innerHTML = html + "</tbody>";
 }
@@ -457,10 +558,10 @@ async function buildSensitivityTable(fcf) {
 async function getBeta(tickerInput) {
 
   const ticker =
-  tickerInput ||
-  document.getElementById("ticker")?.value ||
-  document.getElementById("mainTicker")?.value ||
-  "AAPL";
+    tickerInput ||
+    document.getElementById("ticker")?.value ||
+    document.getElementById("mainTicker")?.value ||
+    "AAPL";
 
   const resultEl = document.getElementById("betaResult");
   const detailsEl = document.getElementById("betaDetails");
@@ -469,13 +570,15 @@ async function getBeta(tickerInput) {
   detailsEl.innerHTML = "";
 
   try {
-    const res = await fetch("http://127.0.0.1:5001/beta", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ ticker })
-    });
-
-    const data = await res.json();
+    const data = await cachedFetch(
+  `${API}/beta`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ ticker })
+  },
+  `beta-${ticker}`
+);
 
     if (data.error) {
       resultEl.innerText = "Error: " + data.error;
@@ -521,13 +624,15 @@ async function autoForecast(tickerInput, peerTickers = null) {
   detailsEl.innerHTML = "";
 
   try {
-    const fundamentalsRes = await fetch("http://127.0.0.1:5001/fundamentals", {
+    const fundamentalsRes = await cachedFetch(`${API}/fundamentals`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
-    });
+    },
+  `fundamentals-${ticker}`
+  );
 
-    const fundamentals = await fundamentalsRes.json();
+    const fundamentals = fundamentalsRes;
     if (fundamentals.error) {
       resultEl.innerText = "Error: " + fundamentals.error;
       throw new Error(fundamentals.error);
@@ -536,26 +641,29 @@ async function autoForecast(tickerInput, peerTickers = null) {
     GLOBAL_SHARES = (fundamentals?.shares || 0) / 1e6;
     GLOBAL_NET_DEBT = ((fundamentals?.debt || 0) - (fundamentals?.cash || 0)) / 1e6;
 
-    const compsRes = await fetch("http://127.0.0.1:5001/comps", {
+    const compsRes = await cachedFetch(`${API}/comps`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({
         tickers: peerTickers || [ticker]
-      })
+      },
+    `comps-${ticker}`)
     });
 
-    const compsData = await compsRes.json();
+    const compsData = compsRes;
     if (compsData.error) {
       resultEl.innerText = "Comps error: " + compsData.error;
       throw new Error(compsData.error);
     }
-    const modelRes = await fetch("http://127.0.0.1:5001/full_model", {
+    const modelRes = await cachedFetch(`${API}/full_model`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
-    });
+    },
+    `full_model-${ticker}`
+  );
 
-    const model = await modelRes.json();
+    const model = modelRes;
     if (model.error) {
       resultEl.innerText = "Model error: " + model.error;
       throw new Error(model.error);
@@ -690,13 +798,15 @@ async function loadFullModel(tickerInput) {
   tableEl.innerHTML = '<p class="text-block-muted mb-0">Loading…</p>';
 
   try {
-    const res = await fetch("http://127.0.0.1:5001/full_model", {
+    const res = await cachedFetch(`${API}/full_model`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
-    });
+    },
+  `full_model-${ticker}`
+  );
 
-    const data = await res.json();
+    const data = res;
 
     if (data.error) {
       tableEl.innerHTML = "Error: " + data.error;
@@ -846,13 +956,17 @@ async function loadPeerBeta(customTickers = null) {
 
   try {
 
-    const res = await fetch("http://127.0.0.1:5001/peer_beta", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ tickers })
-    });
+    const data = await cachedFetch(
+  `${API}/peer_beta`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ tickers })
+  },
+  `peer_beta-${tickers.join("-")}`
+);
 
-    const data = await res.json();
+    // const data = res;
 
     loadingEl.style.display = "none";
 
@@ -924,16 +1038,20 @@ async function loadWACC(tickerInput) {
 
   try {
 
-    const res = await fetch("http://127.0.0.1:5001/wacc", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        ticker: ticker,
-        beta: GLOBAL_BETA
-      })
-    });
+    const data = await cachedFetch(
+  `${API}/wacc`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      ticker: ticker,
+      beta: GLOBAL_BETA
+    })
+  },
+  `wacc-${ticker}-${GLOBAL_BETA}`
+);
 
-    const data = await res.json();
+    // const data = res;
 
     if (data.error) {
       resultEl.innerHTML = "Error: " + data.error;
@@ -971,13 +1089,17 @@ async function loadWACC(tickerInput) {
 
 async function loadStockPrice(ticker) {
   try {
-    const res = await fetch("http://127.0.0.1:5001/price", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ ticker })
-    });
+    const data = await cachedFetch(
+  `${API}/price`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ ticker })
+  },
+  `price-${ticker}`
+);
 
-    const data = await res.json();
+    // const data = res;
     GLOBAL_PRICE = data.price ?? null;
 
   } catch (err) {
@@ -986,7 +1108,10 @@ async function loadStockPrice(ticker) {
   }
 }
 async function generateModel() {
-
+  
+  clearCache();
+  resetController();
+  
   const ticker =
     document.getElementById("mainTicker")?.value || "AAPL";
 
@@ -1014,40 +1139,50 @@ async function generateModel() {
   dcfResetPipelineList();
   dcfSetPipelineProgress(0, DCF_PIPELINE_STEPS.length);
 
-  const steps = [
-    { id: "beta", fn: () => getBeta(ticker) },
-    { id: "peerBeta", fn: () => loadPeerBeta(peers) },
-    { id: "fullModel", fn: () => loadFullModel(ticker) },
-    { id: "wacc", fn: () => loadWACC(ticker) },
-    { id: "comps", fn: () => autoForecast(ticker, peers) },
-    { id: "dcf", fn: () => runDCF() },
-    { id: "apv", fn: () => runAPV() },
-    { id: "stockPrice", fn: () => loadStockPrice(ticker) },
-    { id: "football", fn: () => { renderFootballField(); } },
-    { id: "stockChart", fn: () => renderStockChart(ticker) },
-    { id: "summary", fn: () => { renderSummary(); } }
-  ];
-
-  const revealBeforeIndex = 8;
-  let okCount = 0;
   try {
-    for (let i = 0; i < steps.length; i++) {
-      if (i === revealBeforeIndex) {
-        dcfRevealPanels();
-      }
-      const ok = await dcfRunPipelineStep(steps[i].id, steps[i].fn);
-      if (ok) okCount++;
-      dcfSetPipelineProgress(i + 1, steps.length);
-    }
-    if (statusEl) {
-      statusEl.textContent = "Finished: " + okCount + "/" + steps.length + " steps succeeded.";
-    }
-    setTimeout(dcfResizeCharts, 100);
+
+    // =========================
+    // 🚀 GROUP 1 (PARALLEL)
+    // =========================
+    await Promise.all([
+      dcfRunPipelineStep("beta", () => getBeta(ticker)),
+      dcfRunPipelineStep("peerBeta", () => loadPeerBeta(peers)),
+      dcfRunPipelineStep("fullModel", () => loadFullModel(ticker)),
+      dcfRunPipelineStep("stockPrice", () => loadStockPrice(ticker))
+    ]);
+
+    await sleep(1200); // small buffer
+
+    // =========================
+    // 🚀 GROUP 2 (PARALLEL)
+    // =========================
+    await Promise.all([
+      dcfRunPipelineStep("wacc", () => loadWACC(ticker)),
+      dcfRunPipelineStep("comps", () => autoForecast(ticker, peers))
+    ]);
+
+    await sleep(1200);
+
+    // =========================
+    // 🚀 GROUP 3 (SEQUENTIAL)
+    // =========================
+    await dcfRunPipelineStep("dcf", () => runDCF());
+    await dcfRunPipelineStep("apv", () => runAPV());
+
+    // =========================
+    // 🎨 UI / CHARTS
+    // =========================
+    renderFootballField();
+    await renderStockChart(ticker);
+    renderSummary();
+
+  } catch (err) {
+    console.error("Pipeline failed:", err);
   } finally {
     __dcfGenerating = false;
     if (btn) btn.disabled = false;
     dcfSetProgressRunning(false);
-    dcfSetPipelineProgress(steps.length, steps.length);
+    dcfSetPipelineProgress(DCF_PIPELINE_STEPS.length, DCF_PIPELINE_STEPS.length);
     dcfRevealPanels();
   }
 }
@@ -1065,16 +1200,20 @@ async function runAPV() {
     const ticker =
       document.getElementById("mainTicker")?.value || "AAPL";
 
-    const res = await fetch("http://127.0.0.1:5001/wacc", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        ticker: ticker,
-        beta: GLOBAL_BETA
-      })
-    });
+    const data = await cachedFetch(
+  `${API}/wacc`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      ticker: ticker,
+      beta: GLOBAL_BETA
+    })
+  },
+  `wacc-${ticker}-${GLOBAL_BETA}`
+);
 
-    const data = await res.json();
+    // const data = res;
 
     if (data.error) {
       resultEl.innerHTML = "Error: " + data.error;
@@ -1386,13 +1525,17 @@ async function renderStockChart(ticker) {
 
   try {
 
-    const res = await fetch("http://127.0.0.1:5001/price_history", {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ ticker })
-    });
+    const data = await cachedFetch(
+  `${API}/price_history`,
+  {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ ticker })
+  },
+  `price_history-${ticker}`
+);
 
-    const data = await res.json();
+    // const data = res;
 
     if (data.error) {
       console.error(data.error);
