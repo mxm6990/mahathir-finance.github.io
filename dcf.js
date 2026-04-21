@@ -257,27 +257,43 @@ function dcfSetPipelineProgress(completed, total) {
 }
 
 async function dcfRunPipelineStep(id, fn) {
-  const li = document.querySelector("#dcfPipelineSteps [data-step=\"" + id + "\"]");
+  const li = document.querySelector(`#dcfPipelineSteps [data-step="${id}"]`);
+
   if (li) {
-    li.className = "dcf-step dcf-step--running";
+    // ✅ RESET STATE PROPERLY
+    li.classList.remove("dcf-step--ok", "dcf-step--fail");
+    li.classList.add("dcf-step--running");
+
     const det = li.querySelector(".dcf-step-detail");
-    if (det) det.textContent = "";
+    if (det) det.textContent = "Running...";
   }
+
   try {
     await dcfWithTimeout(Promise.resolve().then(fn), 15000, "Step " + id);
+
     if (li) {
-      li.className = "dcf-step dcf-step--ok";
+      // ✅ CLEAN TRANSITION TO SUCCESS
+      li.classList.remove("dcf-step--running");
+      li.classList.add("dcf-step--ok");
+
       const det = li.querySelector(".dcf-step-detail");
-      if (det) det.textContent = "OK";
+      if (det) det.textContent = "Done";
     }
+
     return true;
+
   } catch (err) {
     const msg = err && err.message ? err.message : String(err);
+
     if (li) {
-      li.className = "dcf-step dcf-step--fail";
+      // ❌ ERROR STATE
+      li.classList.remove("dcf-step--running");
+      li.classList.add("dcf-step--fail");
+
       const det = li.querySelector(".dcf-step-detail");
       if (det) det.textContent = msg;
     }
+
     return false;
   }
 }
@@ -865,10 +881,11 @@ const model = modelRes;
 async function loadFullModel(tickerInput) {
 
   const ticker =
-  tickerInput ||
-  document.getElementById("modelTicker")?.value ||
-  document.getElementById("mainTicker")?.value ||
-  "AAPL";
+    tickerInput ||
+    document.getElementById("modelTicker")?.value ||
+    document.getElementById("mainTicker")?.value ||
+    "AAPL";
+
   const tableEl = document.getElementById("fullModelTable");
   if (!tableEl) throw new Error("Full model table is missing from the page.");
 
@@ -879,9 +896,7 @@ async function loadFullModel(tickerInput) {
       method: "POST",
       headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ ticker })
-    },
-  `full_model-${ticker}`
-  );
+    }, `full_model-${ticker}`);
 
     const data = res;
 
@@ -898,6 +913,9 @@ async function loadFullModel(tickerInput) {
       throw new Error("No revenue data");
     }
 
+    // =========================
+    // ASSUMPTIONS
+    // =========================
     const assumptions = {
       cogs_pct: (parseFloat(document.getElementById("cogs_pct")?.value) || 60) / 100,
       sga_pct: (parseFloat(document.getElementById("sga_pct")?.value) || 15) / 100,
@@ -906,7 +924,11 @@ async function loadFullModel(tickerInput) {
       capex_pct: (parseFloat(document.getElementById("capex_pct")?.value) || 6) / 100,
       nwc_pct: (parseFloat(document.getElementById("nwc_pct")?.value) || 2) / 100
     };
-    const allRevenue = forecast;
+
+    // =========================
+    // COMBINE HIST + FORECAST
+    // =========================
+    const allRevenue = [...hist, ...forecast];
 
     let rows = {
       revenue: [],
@@ -922,8 +944,31 @@ async function loadFullModel(tickerInput) {
       fcf: []
     };
 
-    for (let r of allRevenue) {
+    // =========================
+    // BUILD MODEL
+    // =========================
+    for (let i = 0; i < allRevenue.length; i++) {
 
+      const r = allRevenue[i];
+      const isForecast = i >= hist.length;
+
+      // 🔹 Historical → only revenue
+      if (!isForecast) {
+        rows.revenue.push(r);
+        rows.cogs.push(null);
+        rows.grossProfit.push(null);
+        rows.sga.push(null);
+        rows.ebitda.push(null);
+        rows.da.push(null);
+        rows.ebit.push(null);
+        rows.nopat.push(null);
+        rows.capex.push(null);
+        rows.nwc.push(null);
+        rows.fcf.push(null);
+        continue;
+      }
+
+      // 🔹 Forecast → full model
       const cogs = r * assumptions.cogs_pct;
       const gp = r - cogs;
       const sga = r * assumptions.sga_pct;
@@ -952,26 +997,48 @@ async function loadFullModel(tickerInput) {
       rows.fcf.push(Number(fcf.toFixed(0)));
     }
 
-    GLOBAL_FCF = rows.fcf;
+    // =========================
+    // GLOBAL STORAGE (ONLY FORECAST FCF)
+    // =========================
+    GLOBAL_FCF = rows.fcf.slice(hist.length);
     GLOBAL_REVENUE = rows.revenue;
 
+    // =========================
+    // FORMATTER
+    // =========================
     function formatRow(label, arr) {
       return (
         "<tr>" +
         `<th scope="row">${label}</th>` +
-        arr.map(v => `<td>$${Math.round(v).toLocaleString()}</td>`).join("") +
+        arr.map(v =>
+          v === null
+            ? `<td>-</td>`
+            : `<td>$${Math.round(v).toLocaleString()}</td>`
+        ).join("") +
         "</tr>"
       );
     }
 
+    // =========================
+    // YEARS HEADER
+    // =========================
     const years = [
       ...hist.map((_, i) => `Y-${hist.length - i}`),
-      ...forecast.map((_, i) => `F${i+1}`)
+      ...forecast.map((_, i) => `F${i + 1}`)
     ];
 
+    // =========================
+    // TABLE BUILD
+    // =========================
     const table = (
       dcfTableOpen() +
-      `<thead><tr><th scope="col">Metric</th>${years.map(y => `<th scope="col">${y}</th>`).join("")}</tr></thead><tbody>` +
+      `<thead>
+        <tr>
+          <th scope="col">Metric</th>
+          ${years.map(y => `<th scope="col">${y}</th>`).join("")}
+        </tr>
+      </thead>
+      <tbody>` +
       formatRow("Revenue", rows.revenue) +
       formatRow("COGS", rows.cogs) +
       formatRow("Gross Profit", rows.grossProfit) +
@@ -986,6 +1053,10 @@ async function loadFullModel(tickerInput) {
       "</tbody>" +
       dcfTableClose()
     );
+
+    // =========================
+    // ASSUMPTIONS PANEL
+    // =========================
     const assumptionsPanel = `
       <div class="text-block-muted mt-3">
         <strong>Model assumptions</strong><br>
@@ -997,6 +1068,7 @@ async function loadFullModel(tickerInput) {
         Tax: ${(assumptions.tax_rate * 100).toFixed(1)}%
       </div>
     `;
+
     tableEl.innerHTML = table + assumptionsPanel;
 
   } catch (err) {
@@ -1214,7 +1286,7 @@ async function generateModel() {
 
   if (btn) btn.disabled = true;
   if (panel) panel.hidden = false;
-  if (statusEl) statusEl.textContent = "Running…";
+  if (statusEl) statusEl.textContent = "Done!";
 
   dcfSetProgressRunning(true);
   dcfShowSkeletons();
