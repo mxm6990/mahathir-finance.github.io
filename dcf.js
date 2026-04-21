@@ -167,6 +167,23 @@ function dcfTableClose() {
 }
 
 var __dcfGenerating = false;
+function dcfWithTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise(function (_, reject) {
+      setTimeout(function () {
+        reject(new Error((label || "Operation") + " timed out after " + ms + "ms"));
+      }, ms);
+    })
+  ]);
+}
+
+function dcfSetProgressRunning(isRunning) {
+  const bar = document.getElementById("dcfProgressBar");
+  if (!bar) return;
+  bar.classList.toggle("progress-bar-animated", !!isRunning);
+  bar.classList.toggle("progress-bar-striped", !!isRunning);
+}
 
 var DCF_PIPELINE_STEPS = [
   { id: "beta", label: "Equity beta regression" },
@@ -250,7 +267,7 @@ async function dcfRunPipelineStep(id, fn) {
     if (det) det.textContent = "";
   }
   try {
-    await fn();
+    await dcfWithTimeout(Promise.resolve().then(fn), 15000, "Step " + id);
     if (li) {
       li.className = "dcf-step dcf-step--ok";
       const det = li.querySelector(".dcf-step-detail");
@@ -1111,9 +1128,16 @@ async function generateModel() {
   }
 
   const btn = document.getElementById("btnGenerateModel");
-
+  const panel = document.getElementById("dcfPipelinePanel");
+  const statusEl = document.getElementById("dcfPipelineStatus");
   __dcfGenerating = true;
   if (btn) btn.disabled = true;
+  if (panel) panel.hidden = false;
+  if (statusEl) statusEl.textContent = "Running…";
+  dcfSetProgressRunning(true);
+  dcfShowSkeletons();
+  dcfResetPipelineList();
+  dcfSetPipelineProgress(0, DCF_PIPELINE_STEPS.length);
 
   try {
 
@@ -1157,6 +1181,9 @@ async function generateModel() {
   } finally {
     __dcfGenerating = false;
     if (btn) btn.disabled = false;
+    dcfSetProgressRunning(false);
+    dcfSetPipelineProgress(DCF_PIPELINE_STEPS.length, DCF_PIPELINE_STEPS.length);
+    dcfRevealPanels();
   }
 }
 async function runAPV() {
