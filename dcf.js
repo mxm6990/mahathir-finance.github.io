@@ -503,24 +503,22 @@ async function buildSensitivityTable(fcf) {
 
   const lightMode = document.documentElement.getAttribute("data-theme") === "light";
 
-  // ✅ LOCAL DCF CALCULATION (no API)
   function computeDCF(fcf, r, g) {
-  let value = 0;
+    let value = 0;
 
-  for (let i = 0; i < fcf.length; i++) {
-    value += fcf[i] / Math.pow(1 + r, i + 1);
+    for (let i = 0; i < fcf.length; i++) {
+      value += fcf[i] / Math.pow(1 + r, i + 1);
+    }
+
+    if (r <= g) return 0;
+
+    const terminal =
+      (fcf[fcf.length - 1] * (1 + g)) / (r - g);
+
+    value += terminal / Math.pow(1 + r, fcf.length);
+
+    return value;
   }
-
-  // ✅ safety guard (prevents division crash)
-  if (r <= g) return 0;
-
-  const terminal =
-    (fcf[fcf.length - 1] * (1 + g)) / (r - g);
-
-  value += terminal / Math.pow(1 + r, fcf.length);
-
-  return value;
-}
 
   try {
 
@@ -538,6 +536,7 @@ async function buildSensitivityTable(fcf) {
 
       rValues.forEach((r) => {
 
+        // ✅ FIXED LINE
         const value = computeDCF(fcf, r, g);
 
         let color = lightMode
