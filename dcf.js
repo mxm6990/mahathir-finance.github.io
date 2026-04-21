@@ -505,19 +505,22 @@ async function buildSensitivityTable(fcf) {
 
   // ✅ LOCAL DCF CALCULATION (no API)
   function computeDCF(fcf, r, g) {
-    let value = 0;
+  let value = 0;
 
-    for (let i = 0; i < fcf.length; i++) {
-      value += fcf[i] / Math.pow(1 + r, i + 1);
-    }
-
-    const terminal =
-      (fcf[fcf.length - 1] * (1 + g)) / (r - g);
-
-    value += terminal / Math.pow(1 + r, fcf.length);
-
-    return value;
+  for (let i = 0; i < fcf.length; i++) {
+    value += fcf[i] / Math.pow(1 + r, i + 1);
   }
+
+  // ✅ safety guard (prevents division crash)
+  if (r <= g) return 0;
+
+  const terminal =
+    (fcf[fcf.length - 1] * (1 + g)) / (r - g);
+
+  value += terminal / Math.pow(1 + r, fcf.length);
+
+  return value;
+}
 
   try {
 
@@ -1057,41 +1060,43 @@ async function loadWACC(tickerInput) {
   try {
 
     const data = await cachedFetch(
-  `${API}/wacc`,
-  {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({
-      ticker: ticker,
-      beta: GLOBAL_BETA
-    })
-  },
-  `wacc-${ticker}-${GLOBAL_BETA}`
-);
-
-    // const data = res;
+      `${API}/wacc`,
+      {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          ticker: ticker,
+          beta: GLOBAL_BETA
+        })
+      },
+      `wacc-${ticker}-${GLOBAL_BETA}`
+    );
 
     if (data.error) {
       resultEl.innerHTML = "Error: " + data.error;
       throw new Error(data.error);
     }
 
-    GLOBAL_WACC = typeof data.wacc === "number" ? data.wacc : GLOBAL_WACC;
+    // ✅ safe assignment
+    if (typeof data.wacc === "number" && !isNaN(data.wacc)) {
+      GLOBAL_WACC = data.wacc;
+    }
+
     applyCustomWacc();
 
     const table = (
       dcfTableOpen() +
       `<thead><tr><th scope="col">Metric</th><th scope="col">Value</th></tr></thead><tbody>
-        <tr><td>Equity</td><td>$${Math.round(data.equity/1e6).toLocaleString()}M</td></tr>
-        <tr><td>Debt</td><td>$${Math.round(data.debt/1e6).toLocaleString()}M</td></tr>
-        <tr><td>Enterprise value</td><td>$${Math.round(data.enterprise_value/1e6).toLocaleString()}M</td></tr>
-        <tr><td>E/V</td><td>${(data.e_weight*100).toFixed(2)}%</td></tr>
-        <tr><td>D/V</td><td>${(data.d_weight*100).toFixed(2)}%</td></tr>
-        <tr><td>Beta</td><td>${data.beta.toFixed(2)}</td></tr>
-        <tr><td>Cost of equity</td><td>${(data.cost_of_equity*100).toFixed(2)}%</td></tr>
-        <tr><td>Cost of debt</td><td>${(data.cost_of_debt*100).toFixed(2)}%</td></tr>
-        <tr><td>After-tax debt</td><td>${(data.after_tax_debt*100).toFixed(2)}%</td></tr>
-        <tr><td><b>WACC</b></td><td><b>${(data.wacc*100).toFixed(2)}%</b></td></tr>
+        <tr><td>Equity</td><td>$${Math.round((data.equity || 0)/1e6).toLocaleString()}M</td></tr>
+        <tr><td>Debt</td><td>$${Math.round((data.debt || 0)/1e6).toLocaleString()}M</td></tr>
+        <tr><td>Enterprise value</td><td>$${Math.round((data.enterprise_value || 0)/1e6).toLocaleString()}M</td></tr>
+        <tr><td>E/V</td><td>${((data.e_weight || 0)*100).toFixed(2)}%</td></tr>
+        <tr><td>D/V</td><td>${((data.d_weight || 0)*100).toFixed(2)}%</td></tr>
+        <tr><td>Beta</td><td>${(data.beta || 0).toFixed(2)}</td></tr>
+        <tr><td>Cost of equity</td><td>${((data.cost_of_equity || 0)*100).toFixed(2)}%</td></tr>
+        <tr><td>Cost of debt</td><td>${((data.cost_of_debt || 0)*100).toFixed(2)}%</td></tr>
+        <tr><td>After-tax debt</td><td>${((data.after_tax_debt || 0)*100).toFixed(2)}%</td></tr>
+        <tr><td><b>WACC</b></td><td><b>${((data.wacc || 0)*100).toFixed(2)}%</b></td></tr>
       </tbody>` +
       dcfTableClose()
     );
@@ -1148,10 +1153,13 @@ async function generateModel() {
   const btn = document.getElementById("btnGenerateModel");
   const panel = document.getElementById("dcfPipelinePanel");
   const statusEl = document.getElementById("dcfPipelineStatus");
+
   __dcfGenerating = true;
+
   if (btn) btn.disabled = true;
   if (panel) panel.hidden = false;
   if (statusEl) statusEl.textContent = "Running…";
+
   dcfSetProgressRunning(true);
   dcfShowSkeletons();
   dcfResetPipelineList();
@@ -1160,35 +1168,37 @@ async function generateModel() {
   try {
 
     // =========================
-    // 🚀 GROUP 1 (PARALLEL)
+    // 🚀 GROUP 1 (SEQUENTIAL — FIXED)
     // =========================
-    await Promise.all([
-      dcfRunPipelineStep("beta", () => getBeta(ticker)),
-      dcfRunPipelineStep("peerBeta", () => loadPeerBeta(peers)),
-      dcfRunPipelineStep("fullModel", () => loadFullModel(ticker)),
-      dcfRunPipelineStep("stockPrice", () => loadStockPrice(ticker))
-    ]);
+    await dcfRunPipelineStep("beta", () => getBeta(ticker));
+    await sleep(400);
 
-    await sleep(1200); // small buffer
+    await dcfRunPipelineStep("peerBeta", () => loadPeerBeta(peers));
+    await sleep(400);
 
-    // =========================
-    // 🚀 GROUP 2 (PARALLEL)
-    // =========================
-    await Promise.all([
-      dcfRunPipelineStep("wacc", () => loadWACC(ticker)),
-      dcfRunPipelineStep("comps", () => autoForecast(ticker, peers))
-    ]);
+    await dcfRunPipelineStep("fullModel", () => loadFullModel(ticker));
+    await sleep(400);
 
-    await sleep(1200);
+    await dcfRunPipelineStep("stockPrice", () => loadStockPrice(ticker));
+    await sleep(600);
 
     // =========================
-    // 🚀 GROUP 3 (SEQUENTIAL)
+    // 🚀 GROUP 2 (SEQUENTIAL — FIXED)
+    // =========================
+    await dcfRunPipelineStep("wacc", () => loadWACC(ticker));
+    await sleep(500);
+
+    await dcfRunPipelineStep("comps", () => autoForecast(ticker, peers));
+    await sleep(500);
+
+    // =========================
+    // 🚀 GROUP 3 (UNCHANGED)
     // =========================
     await dcfRunPipelineStep("dcf", () => runDCF());
     await dcfRunPipelineStep("apv", () => runAPV());
 
     // =========================
-    // 🎨 UI / CHARTS
+    // 🎨 UI
     // =========================
     renderFootballField();
     await renderStockChart(ticker);
@@ -1198,9 +1208,15 @@ async function generateModel() {
     console.error("Pipeline failed:", err);
   } finally {
     __dcfGenerating = false;
+
     if (btn) btn.disabled = false;
+
     dcfSetProgressRunning(false);
-    dcfSetPipelineProgress(DCF_PIPELINE_STEPS.length, DCF_PIPELINE_STEPS.length);
+    dcfSetPipelineProgress(
+      DCF_PIPELINE_STEPS.length,
+      DCF_PIPELINE_STEPS.length
+    );
+
     dcfRevealPanels();
   }
 }
