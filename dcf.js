@@ -17,9 +17,6 @@ function resetController() {
   controller = new AbortController();
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 const CACHE = {};
 
@@ -344,11 +341,11 @@ async function runDCF() {
     headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       fcf,
-      discount_rate: r,
-      terminal_growth: g
+      discount_rate: discountRate,
+      terminal_growth: GLOBAL_G
     })
   },
-  `dcf-${r}-${g}-${fcf[0]}`
+  `dcf-${discountRate}-${GLOBAL_G}-${fcf[0]}`
 );
 
 // const raw = await res.json();
@@ -395,7 +392,9 @@ async function runDCF() {
       renderForecastTable(GLOBAL_REVENUE, margin, tax, capex);
     }
 
-    buildSensitivityTable(fcf);
+    setTimeout(() => {
+  buildSensitivityTable(fcf);
+}, 0);
 
   } catch (err) {
     console.error(err);
@@ -487,7 +486,7 @@ function renderForecastTable(revenues, margin, tax, capex) {
 }
 
 // ======================
-// SENSITIVITY TABLE (g vs r)
+// SENSITIVITY TABLE (BATCHED 🚀)
 // ======================
 async function buildSensitivityTable(fcf) {
 
@@ -499,57 +498,81 @@ async function buildSensitivityTable(fcf) {
   const baseR = GLOBAL_WACC > 0 ? GLOBAL_WACC : 0.1;
   const baseG = 0.03;
 
-  const rValues = [0.08, 0.09, 0.1, 0.11, 0.12];
-  const gValues = [0.02, 0.03, 0.04];
+  const rValues = [0.09, 0.1, 0.11];
+  const gValues = [0.02, 0.03];
+
   const lightMode = document.documentElement.getAttribute("data-theme") === "light";
 
-  let html = "<thead><tr><th scope=\"col\">g \\ r</th>";
+  try {
 
-  rValues.forEach(r => {
-    html += `<th scope="col">${(r * 100).toFixed(1)}%</th>`;
-  });
+    // 🚀 SINGLE API CALL (this replaces ALL loops)
+    const raw = await cachedFetch(
+      `${API}/dcf_batch`,
+      {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          fcf,
+          discount_rates: rValues,
+          terminal_growths: gValues
+        })
+      },
+      `dcf_batch-${fcf[0]}`
+    );
 
-  html += "</tr></thead><tbody>";
+    if (raw.error) throw new Error(raw.error);
 
-for (let g of gValues) {
+    const matrix = raw.matrix; 
+    // expected format:
+    // [
+    //   [value_g1_r1, value_g1_r2, ...],
+    //   [value_g2_r1, value_g2_r2, ...]
+    // ]
 
-  html += `<tr><th scope="row">${(g * 100).toFixed(1)}%</th>`;
+    let html = "<thead><tr><th scope=\"col\">g \\ r</th>";
 
-  for (let r of rValues) {
+    rValues.forEach(r => {
+      html += `<th scope="col">${(r * 100).toFixed(1)}%</th>`;
+    });
 
-  const raw = await fetchWithRetry(`${API}/dcf`, {
-  method: "POST",
-  headers: {"Content-Type":"application/json"},
-  body: JSON.stringify({
-    fcf,
-    discount_rate: r,
-    terminal_growth: g
-  })
-});
+    html += "</tr></thead><tbody>";
 
-// const raw = await res.json();
-    const data = (raw.growth && typeof raw.growth === "object")
-      ? raw.growth
-      : raw;
-    const value = data.enterprise_value ?? 0;
+    gValues.forEach((g, i) => {
 
-    let color = lightMode ? "rgba(255, 193, 7, 0.42)" : "rgba(255, 193, 7, 0.15)";
-    if (r < baseR && g > baseG) color = lightMode ? "rgba(25, 135, 84, 0.38)" : "rgba(25, 135, 84, 0.2)";
-    if (r > baseR && g < baseG) color = lightMode ? "rgba(220, 53, 69, 0.32)" : "rgba(220, 53, 69, 0.15)";
+      html += `<tr><th scope="row">${(g * 100).toFixed(1)}%</th>`;
 
-    html += `<td style="background:${color}">$${Math.round(value).toLocaleString()}</td>`;
+      rValues.forEach((r, j) => {
 
-    // 🔥 THROTTLE EACH CELL REQUEST
-    await sleep(300);
+        const value = matrix?.[i]?.[j] ?? 0;
+
+        let color = lightMode
+          ? "rgba(255, 193, 7, 0.42)"
+          : "rgba(255, 193, 7, 0.15)";
+
+        if (r < baseR && g > baseG) {
+          color = lightMode
+            ? "rgba(25, 135, 84, 0.38)"
+            : "rgba(25, 135, 84, 0.2)";
+        }
+
+        if (r > baseR && g < baseG) {
+          color = lightMode
+            ? "rgba(220, 53, 69, 0.32)"
+            : "rgba(220, 53, 69, 0.15)";
+        }
+
+        html += `<td style="background:${color}">$${Math.round(value).toLocaleString()}</td>`;
+      });
+
+      html += "</tr>";
+    });
+
+    table.innerHTML = html + "</tbody>";
+
+  } catch (err) {
+    console.error("Sensitivity table failed:", err);
+    table.innerHTML = "<span style='color:#dc3545;'>Failed to load sensitivity</span>";
   }
-
-  html += "</tr>";
-
-  // 🔥 EXTRA DELAY BETWEEN ROWS
-  await sleep(500);
-}
-
-  table.innerHTML = html + "</tbody>";
 }
 
 // ======================
@@ -624,51 +647,46 @@ async function autoForecast(tickerInput, peerTickers = null) {
   detailsEl.innerHTML = "";
 
   try {
-    const fundamentalsRes = await cachedFetch(`${API}/fundamentals`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ ticker })
-    },
-  `fundamentals-${ticker}`
-  );
 
-    const fundamentals = fundamentalsRes;
-    if (fundamentals.error) {
-      resultEl.innerText = "Error: " + fundamentals.error;
-      throw new Error(fundamentals.error);
-    }
+    // 🚀 PARALLEL FETCH (big performance win)
+   const [fundamentalsRes, compsRes, modelRes] = await Promise.all([
+
+  cachedFetch(`${API}/fundamentals`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ ticker })
+  }, `fundamentals-${ticker}`),
+
+  cachedFetch(`${API}/comps`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      tickers: peerTickers || [ticker]
+    })
+  }, `comps-${ticker}`),
+
+  cachedFetch(`${API}/full_model`, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ ticker })
+  }, `full_model-${ticker}`)
+
+]);
+const fundamentals = fundamentalsRes;
+const compsData = compsRes;
+const model = modelRes;
+
+    // ❌ Error checks
+    if (fundamentals.error) throw new Error(fundamentals.error);
+    if (compsData.error) throw new Error(compsData.error);
+    if (model.error) throw new Error(model.error);
+
+    // 📊 Global state updates
     GLOBAL_FUNDAMENTALS = fundamentals;
     GLOBAL_SHARES = (fundamentals?.shares || 0) / 1e6;
     GLOBAL_NET_DEBT = ((fundamentals?.debt || 0) - (fundamentals?.cash || 0)) / 1e6;
 
-    const compsRes = await cachedFetch(`${API}/comps`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        tickers: peerTickers || [ticker]
-      },
-    `comps-${ticker}`)
-    });
-
-    const compsData = compsRes;
-    if (compsData.error) {
-      resultEl.innerText = "Comps error: " + compsData.error;
-      throw new Error(compsData.error);
-    }
-    const modelRes = await cachedFetch(`${API}/full_model`, {
-      method: "POST",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ ticker })
-    },
-    `full_model-${ticker}`
-  );
-
-    const model = modelRes;
-    if (model.error) {
-      resultEl.innerText = "Model error: " + model.error;
-      throw new Error(model.error);
-    }
-    const baseMetric = (fundamentals && fundamentals.ebitda)
+    const baseMetric = fundamentals?.ebitda
       ? fundamentals.ebitda / 1e6
       : 100;
 
@@ -676,9 +694,10 @@ async function autoForecast(tickerInput, peerTickers = null) {
       ? (fundamentals.debt - fundamentals.cash) / 1e6
       : 0;
 
-    const shares = (fundamentals && fundamentals.shares)
+    const shares = fundamentals?.shares
       ? fundamentals.shares / 1e6
       : 1000;
+
     let baseMultiple;
 
     const userInput = parseFloat(
@@ -688,11 +707,7 @@ async function autoForecast(tickerInput, peerTickers = null) {
     if (!isNaN(userInput) && userInput > 0) {
       baseMultiple = userInput;
 
-    } else if (
-      compsData &&
-      !compsData.error &&
-      typeof compsData.average_multiple === "number"
-    ) {
+    } else if (typeof compsData.average_multiple === "number") {
       baseMultiple = compsData.average_multiple;
 
     } else {
@@ -701,33 +716,28 @@ async function autoForecast(tickerInput, peerTickers = null) {
         model.ev_ebitda ||
         (GLOBAL_BETA ? 18 + (GLOBAL_BETA * 4) : 22);
     }
+
     const lowMultiple = baseMultiple * 0.7;
     const highMultiple = baseMultiple * 1.3;
-    const baseEV = baseMultiple * baseMetric;
-    const lowEV = lowMultiple * baseMetric;
-    const highEV = highMultiple * baseMetric;
 
+    // ✅ Set GLOBAL valuations ONCE (correct placement)
     GLOBAL_VALUATIONS.comps = {
-      low: lowEV,
-      base: baseEV,
-      high: highEV
+      low: (lowMultiple * baseMetric - netDebt) / shares,
+      base: (baseMultiple * baseMetric - netDebt) / shares,
+      high: (highMultiple * baseMetric - netDebt) / shares
     };
+
     const source = (!isNaN(userInput) && userInput > 0)
       ? "User Input"
-      : (compsData && compsData.average_multiple)
+      : (compsData.average_multiple)
         ? "Peer Average"
         : "Model Estimate";
+
     function buildRow(label, multiple, color) {
 
       const ev = multiple * baseMetric;
       const equity = ev - netDebt;
       const price = equity / shares;
-
-      GLOBAL_VALUATIONS.comps = {
-        low: lowMultiple * baseMetric / shares,
-        base: baseMultiple * baseMetric / shares,
-        high: highMultiple * baseMetric / shares
-      };
 
       return `
         <tr style="background:${color}">
@@ -739,46 +749,62 @@ async function autoForecast(tickerInput, peerTickers = null) {
         </tr>
       `;
     }
+
     const table = (
       dcfTableOpen() +
       `<thead><tr>
-          <th scope="col">Scenario</th>
-          <th scope="col">Multiple</th>
-          <th scope="col">EV (mm)</th>
-          <th scope="col">Equity value (mm)</th>
-          <th scope="col">Price per share ($)</th>
-        </tr></thead><tbody>` +
+        <th scope="col">Scenario</th>
+        <th scope="col">Multiple</th>
+        <th scope="col">EV (mm)</th>
+        <th scope="col">Equity value (mm)</th>
+        <th scope="col">Price per share ($)</th>
+      </tr></thead><tbody>` +
       buildRow("Low (−30%)", lowMultiple, "rgba(220, 53, 69, 0.12)") +
       buildRow("Base (peer avg)", baseMultiple, "rgba(255, 193, 7, 0.12)") +
       buildRow("High (+30%)", highMultiple, "rgba(25, 135, 84, 0.15)") +
       "</tbody>" +
       dcfTableClose()
     );
+
     const nerd = `
       <div class="text-block-muted mt-3">
         <strong>Inputs (scaled)</strong><br>
-        EBITDA (mm): ${baseMetric.toFixed(0)} · Net debt (mm): ${netDebt.toFixed(0)} · Shares (mm): ${shares.toFixed(0)}<br>
+        EBITDA (mm): ${baseMetric.toFixed(0)} · 
+        Net debt (mm): ${netDebt.toFixed(0)} · 
+        Shares (mm): ${shares.toFixed(0)}<br>
         Base multiple: ${baseMultiple.toFixed(2)}x (${source})<br><br>
         <strong>Formula</strong><br>
         EV = multiple × EBITDA; equity = EV − net debt; price = equity / shares
       </div>
     `;
+
     let peerBreakdown = "";
 
-    if (compsData && compsData.peer_multiples) {
+    if (compsData.peer_multiples) {
       peerBreakdown = "<div class=\"text-block-muted mt-2\"><strong>Peer multiples</strong><br>";
 
       compsData.peer_multiples.forEach(p => {
         peerBreakdown += `${p.ticker}: ${p.multiple.toFixed(2)}x<br>`;
       });
+
       peerBreakdown += "</div>";
     }
+
     resultEl.innerText = "Comps valuation";
     detailsEl.innerHTML = table + nerd + peerBreakdown;
 
   } catch (err) {
-    console.error(err);
+
+    if (err.name === "AbortError") {
+      console.warn("Request cancelled");
+      return;
+    }
+
+    console.error("AutoForecast failed:", err);
+
     resultEl.innerText = "Error building valuation";
+    detailsEl.innerHTML = `<span style="color:#dc3545;">${err.message}</span>`;
+
     throw err;
   }
 }
