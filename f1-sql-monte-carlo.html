@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1 SQL + Monte Carlo Engine — Mahathir Mahbub</title>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/site.css">
+  <style>
+    .f1-page main {
+      padding: 3rem 0 5rem;
+    }
+    .f1-hero {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .f1-hero h1 {
+      font-size: clamp(1.9rem, 3.6vw, 2.6rem);
+      margin: 0 0 0.8rem;
+      letter-spacing: -0.03em;
+    }
+    .f1-hero p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 75ch;
+    }
+    .f1-chip-row {
+      display: flex;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+    .f1-chip {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      border-radius: var(--radius-pill);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.35rem 0.7rem;
+      letter-spacing: 0.02em;
+    }
+    .f1-section {
+      margin-bottom: 1.5rem;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+    }
+    .f1-section h2 {
+      margin: 0 0 0.65rem;
+      font-size: 1.2rem;
+      letter-spacing: -0.02em;
+    }
+    .f1-section p {
+      margin: 0;
+      color: var(--muted);
+    }
+    .f1-grid {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 0.8rem;
+    }
+    .f1-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface);
+      padding: 0.9rem;
+    }
+    .f1-card h3 {
+      margin: 0 0 0.45rem;
+      font-size: 0.98rem;
+    }
+    .f1-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+    .driver-board {
+      display: grid;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    .driver-row {
+      display: grid;
+      grid-template-columns: 7px 58px 1fr auto;
+      align-items: center;
+      gap: 0.9rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      padding-right: 0.75rem;
+      min-height: 66px;
+    }
+    .team-bar {
+      height: 100%;
+      width: 7px;
+    }
+    .driver-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--border);
+      background: #1a1a1a;
+    }
+    .driver-meta {
+      min-width: 0;
+    }
+    .driver-name {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .driver-team {
+      margin: 0.12rem 0 0;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .driver-num {
+      min-width: 42px;
+      height: 34px;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: var(--surface-elevated);
+      display: inline-grid;
+      place-items: center;
+      font-size: 0.86rem;
+      font-weight: 800;
+      letter-spacing: 0.01em;
+    }
+    .disclaimer {
+      margin-top: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.1rem;
+    }
+    .disclaimer h3 {
+      margin: 0 0 0.45rem;
+      font-size: 1rem;
+    }
+    .disclaimer h4 {
+      margin: 1rem 0 0.35rem;
+      font-size: 0.9rem;
+    }
+    .disclaimer p, .disclaimer li {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.55;
+    }
+    .disclaimer ul {
+      margin: 0.35rem 0 0;
+      padding-left: 1.1rem;
+    }
+  </style>
+</head>
+<body class="tool-page f1-page">
+  <header class="site-header">
+    <div class="container-narrow header-inner">
+      <a href="index.html" class="logo-mark" aria-label="Home">mm</a>
+      <nav class="nav-pill" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="index.html#tools">Tools</a>
+        <a href="index.html#projects">Projects</a>
+        <a href="index.html#skills">Skills</a>
+      </nav>
+      <a class="btn-pill" href="index.html#contact">Let&apos;s Talk</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="container-narrow">
+      <section class="f1-hero">
+        <h1>F1 SQL + Monte Carlo Performance Intelligence Engine</h1>
+        <p>A relational analytics app that scores drivers, teams, and circuits from race data, then simulates championship outcomes with Monte Carlo forecasting.</p>
+        <div class="f1-chip-row">
+          <span class="f1-chip">SQL Analytics</span>
+          <span class="f1-chip">Custom Driver Grades</span>
+          <span class="f1-chip">Circuit Volatility</span>
+          <span class="f1-chip">Monte Carlo Forecasting</span>
+        </div>
+      </section>
+
+      <section class="f1-section">
+        <h2>MVP Modules</h2>
+        <p>Version 1 scope keeps this ambitious but realistic: outperformance, race-day gains, circuit volatility, consistency, and title probabilities.</p>
+        <div class="f1-grid">
+          <article class="f1-card"><h3>Driver Performance Analytics</h3><p>Qualifying outperformance, race-day gains, and consistency index.</p></article>
+          <article class="f1-card"><h3>Team / Car Analytics</h3><p>Race execution, reliability, and constructor-level Sunday performance.</p></article>
+          <article class="f1-card"><h3>Circuit Intelligence</h3><p>Volatility index, qualifying importance, and rain sensitivity.</p></article>
+          <article class="f1-card"><h3>Championship Forecasting</h3><p>Monte Carlo scenarios for title, podium, and top-10 probabilities.</p></article>
+        </div>
+      </section>
+
+      <section class="f1-section">
+        <h2>Driver Board (MVP Visual)</h2>
+        <p>Rows include driver image icon, race number, and team color coding for fast scanning.</p>
+        <div class="driver-board" role="list" aria-label="Formula 1 driver board">
+          <article class="driver-row" role="listitem"><div class="team-bar" style="background:#3671C6;"></div><img class="driver-avatar" src="https://media.formula1.com/image/upload/f_auto,c_limit,w_120,q_auto/content/dam/fom-website/drivers/2024Drivers/verstappen" alt="Max Verstappen"><div class="driver-meta"><p class="driver-name">Max Verstappen</p><p class="driver-team">Red Bull Racing</p></div><span class="driver-num">#1</span></article>
+          <article class="driver-row" role="listitem"><div class="team-bar" style="background:#3671C6;"></div><img class="driver-avatar" src="https://media.formula1.com/image/upload/f_auto,c_limit,w_120,q_auto/content/dam/fom-website/drivers/2024Drivers/perez" alt="Sergio Perez"><div class="driver-meta"><p class="driver-name">Sergio Perez</p><p class="driver-team">Red Bull Racing</p></div><span class="driver-num">#11</span></article>
+          <article class="driver-row" role="listitem"><div class="team-bar" style="background:#E8002D;"></div><img class="driver-avatar" src="https://media.formula1.com/image/upload/f_auto,c_limit,w_120,q_auto/content/dam/fom-website/drivers/2024Drivers/leclerc" alt="Charles Leclerc"><div class="driver-meta"><p class="driver-name">Charles Leclerc</p><p class="driver-team">Ferrari</p></div><span class="driver-num">#16</span></article>
+          <article class="driver-row" role="listitem"><div class="team-bar" style="background:#E8002D;"></div><img class="driver-avatar" src="https://media.formula1.com/image/upload/f_auto,c_limit,w_120,q_auto/content/dam/fom-website/drivers/2024Drivers/sainz" alt="Carlos Sainz"><div class="driver-meta"><p class="driver-name">Carlos Sainz</p><p class="driver-team">Ferrari</p></div><span class="driver-num">#55</span></article>
+          <article class="driver-row" role="listitem"><div class="team-bar" style="background:#27F4D2;"></div><img class="driver-avatar" src="https://media.formula1.com/image/upload/f_auto,c_limit,w_120,q_auto/content/dam/fom-website/drivers/2024Drivers/hamilton" alt="Lewis Hamilton"><div class="driver-meta"><p class="driver-name">Lewis Hamilton</p><p class="driver-team">Mercedes</p></div><span class="driver-num">#44</span></article>
+          <article class="driver-row" role="listitem"><div class="team-bar" style="background:#27F4D2;"></div><img class="driver-avatar" src="https://media.formula1.com/image/upload/f_auto,c_limit,w_120,q_auto/content/dam/fom-website/drivers/2024Drivers/russell" alt="George Russell"><div class="driver-meta"><p class="driver-name">George Russell</p><p class="driver-team">Mercedes</p></div><span class="driver-num">#63</span></article>
+          <article class="driver-row" role="listitem"><div class="team-bar" style="background:#FF8000;"></div><img class="driver-avatar" src="https://media.formula1.com/image/upload/f_auto,c_limit,w_120,q_auto/content/dam/fom-website/drivers/2024Drivers/norris" alt="Lando Norris"><div class="driver-meta"><p class="driver-name">Lando Norris</p><p class="driver-team">McLaren</p></div><span class="driver-num">#4</span></article>
+          <article class="driver-row" role="listitem"><div class="team-bar" style="background:#FF8000;"></div><img class="driver-avatar" src="https://media.formula1.com/image/upload/f_auto,c_limit,w_120,q_auto/content/dam/fom-website/drivers/2024Drivers/piastri" alt="Oscar Piastri"><div class="driver-meta"><p class="driver-name">Oscar Piastri</p><p class="driver-team">McLaren</p></div><span class="driver-num">#81</span></article>
+        </div>
+      </section>
+
+      <section class="f1-section">
+        <h2>Model Disclaimer</h2>
+        <div class="disclaimer">
+          <h3>Model Disclaimer</h3>
+          <p>This model provides probabilistic estimates of Formula 1 race outcomes and championship standings using historical performance metrics derived from structured race data.</p>
+          <p>The simulation is based on simplified assumptions and does not account for several real-world factors that can significantly impact race outcomes.</p>
+
+          <h4>⚠️ Key Limitations</h4>
+          <h4>1. No Race Incidents Modeled</h4>
+          <ul>
+            <li>Safety cars</li>
+            <li>Red flags</li>
+            <li>Collisions</li>
+            <li>Mechanical failures (DNFs)</li>
+          </ul>
+          <p>👉 These events introduce randomness not captured in the model.</p>
+
+          <h4>2. No Strategy Modeling</h4>
+          <ul>
+            <li>Pit stop timing</li>
+            <li>Tire strategy</li>
+            <li>Undercuts / overcuts</li>
+          </ul>
+          <p>👉 Strategy is a major determinant of race results but is excluded.</p>
+
+          <h4>3. No Dynamic Weather Simulation</h4>
+          <ul>
+            <li>Weather is treated as static per race</li>
+            <li>No intra-race changes (e.g., dry → wet transitions)</li>
+          </ul>
+
+          <h4>4. Limited Data Scope (Current Version)</h4>
+          <ul>
+            <li>Based on a small sample dataset</li>
+            <li>Results improve with more historical race data</li>
+          </ul>
+
+          <h4>5. Simplified Driver Performance Modeling</h4>
+          <p>Uses aggregate metrics such as:</p>
+          <ul>
+            <li>average finish</li>
+            <li>racecraft (positions gained)</li>
+            <li>composure (early vs late lap pace)</li>
+          </ul>
+          <p>👉 Does not model teammate interactions, car upgrades, or track-specific strengths.</p>
+
+          <h4>🧠 Interpretation Guidance</h4>
+          <p>Results should be interpreted as directional probabilities, not exact predictions.</p>
+          <p>The model is best used to explore how driver performance metrics translate into probabilistic outcomes under controlled assumptions.</p>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container-narrow">
+      <p><a href="index.html" style="color: inherit;">← Home</a></p>
+      <div class="footer-theme-row">
+        <button id="themeToggle" class="btn-pill theme-toggle-btn" type="button">Light mode</button>
+      </div>
+    </div>
+  </footer>
+  <script src="assets/theme.js"></script>
+</body>
+</html>
