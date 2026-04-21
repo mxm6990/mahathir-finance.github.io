@@ -351,7 +351,7 @@ async function runDCF() {
 // const raw = await res.json();
 
     if (raw.error) {
-      document.getElementById("result").innerText = "Error: " + raw.error;
+      resultEl.innerHTML = "Error: " + raw.error;
       throw new Error(raw.error);
     }
 
@@ -360,7 +360,7 @@ async function runDCF() {
       : raw;
 
     if (data.error) {
-      document.getElementById("result").innerText = "Error: " + data.error;
+      resultEl.innerHTML = "Error: " + data.error;
       throw new Error(data.error);
     }
 
@@ -376,7 +376,7 @@ async function runDCF() {
         ? " APV per share is in the APV section below."
         : "";
 
-    const resultEl = document.getElementById("result");
+    const resultEl = document.getElementById("dcfResult");
 
 const summaryTable = (
   dcfTableOpen() +
@@ -421,12 +421,7 @@ const assumptionsBlock = `
   </div>
 `;
 
-resultEl.innerHTML =
-  `<h5 style="margin-bottom:10px;">DCF Valuation</h5>` +
-  summaryTable +
-  assumptionsBlock;
-
-  const breakdown = `
+const breakdown = `
 <div class="text-block-muted mt-3">
   <strong>Valuation logic</strong><br>
   Enterprise Value = PV(FCF) + Terminal Value<br>
@@ -434,6 +429,12 @@ resultEl.innerHTML =
   Price per Share = Equity / Shares
 </div>
 `;
+
+resultEl.innerHTML =
+  `<h5 style="margin-bottom:10px;">DCF Valuation</h5>` +
+  summaryTable +
+  assumptionsBlock +
+  breakdown;
 
     // Store for football-field chart
     GLOBAL_VALUATIONS.dcf = {
@@ -454,7 +455,7 @@ resultEl.innerHTML =
 
   } catch (err) {
     console.error(err);
-    document.getElementById("result").innerText = "Error running DCF";
+    resultEl.innerHTML = "Error running DCF";
     if (__dcfGenerating) throw err;
   }
 }
