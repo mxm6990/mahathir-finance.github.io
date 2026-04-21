@@ -496,38 +496,30 @@ async function buildSensitivityTable(fcf) {
   table.innerHTML = "";
 
   const baseR = GLOBAL_WACC > 0 ? GLOBAL_WACC : 0.1;
-  const baseG = 0.03;
+  const baseG = GLOBAL_G || 0.03;
 
   const rValues = [0.09, 0.1, 0.11];
   const gValues = [0.02, 0.03];
 
   const lightMode = document.documentElement.getAttribute("data-theme") === "light";
 
+  // ✅ LOCAL DCF CALCULATION (no API)
+  function computeDCF(fcf, r, g) {
+    let value = 0;
+
+    for (let i = 0; i < fcf.length; i++) {
+      value += fcf[i] / Math.pow(1 + r, i + 1);
+    }
+
+    const terminal =
+      (fcf[fcf.length - 1] * (1 + g)) / (r - g);
+
+    value += terminal / Math.pow(1 + r, fcf.length);
+
+    return value;
+  }
+
   try {
-
-    // 🚀 SINGLE API CALL (this replaces ALL loops)
-    const raw = await cachedFetch(
-      `${API}/dcf_batch`,
-      {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({
-          fcf,
-          discount_rates: rValues,
-          terminal_growths: gValues
-        })
-      },
-      `dcf_batch-${fcf[0]}`
-    );
-
-    if (raw.error) throw new Error(raw.error);
-
-    const matrix = raw.matrix; 
-    // expected format:
-    // [
-    //   [value_g1_r1, value_g1_r2, ...],
-    //   [value_g2_r1, value_g2_r2, ...]
-    // ]
 
     let html = "<thead><tr><th scope=\"col\">g \\ r</th>";
 
@@ -537,13 +529,13 @@ async function buildSensitivityTable(fcf) {
 
     html += "</tr></thead><tbody>";
 
-    gValues.forEach((g, i) => {
+    gValues.forEach((g) => {
 
       html += `<tr><th scope="row">${(g * 100).toFixed(1)}%</th>`;
 
-      rValues.forEach((r, j) => {
+      rValues.forEach((r) => {
 
-        const value = matrix?.[i]?.[j] ?? 0;
+        const value = computeDCF(fcf, r, g);
 
         let color = lightMode
           ? "rgba(255, 193, 7, 0.42)"
