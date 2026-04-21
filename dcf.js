@@ -376,8 +376,64 @@ async function runDCF() {
         ? " APV per share is in the APV section below."
         : "";
 
-    document.getElementById("result").innerText =
-      `DCF value: $${pricePerShare.toFixed(2)} per share (discount ${(discountRate * 100).toFixed(2)}%).${methodNote}`;
+    const resultEl = document.getElementById("result");
+
+const summaryTable = (
+  dcfTableOpen() +
+  `<thead>
+    <tr>
+      <th>Metric</th>
+      <th>Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Enterprise Value</td>
+      <td>$${Math.round(enterpriseValue).toLocaleString()}M</td>
+    </tr>
+    <tr>
+      <td>Net Debt</td>
+      <td>$${Math.round(netDebt).toLocaleString()}M</td>
+    </tr>
+    <tr>
+      <td><strong>Equity Value</strong></td>
+      <td><strong>$${Math.round(equityValue).toLocaleString()}M</strong></td>
+    </tr>
+    <tr>
+      <td>Shares Outstanding</td>
+      <td>${Math.round(shares).toLocaleString()}M</td>
+    </tr>
+    <tr>
+      <td><strong>Intrinsic Value / Share</strong></td>
+      <td><strong>$${pricePerShare.toFixed(2)}</strong></td>
+    </tr>
+  </tbody>` +
+  dcfTableClose()
+);
+
+const assumptionsBlock = `
+  <div class="text-block-muted mt-3">
+    <strong>Key Assumptions</strong><br>
+    Discount rate (WACC): ${(discountRate * 100).toFixed(2)}%<br>
+    Terminal growth: ${(GLOBAL_G * 100).toFixed(2)}%<br>
+    Forecast periods: ${fcf.length} years<br>
+    Method: ${method.toUpperCase()}
+  </div>
+`;
+
+resultEl.innerHTML =
+  `<h5 style="margin-bottom:10px;">DCF Valuation</h5>` +
+  summaryTable +
+  assumptionsBlock;
+
+  const breakdown = `
+<div class="text-block-muted mt-3">
+  <strong>Valuation logic</strong><br>
+  Enterprise Value = PV(FCF) + Terminal Value<br>
+  Equity Value = EV − Net Debt<br>
+  Price per Share = Equity / Shares
+</div>
+`;
 
     // Store for football-field chart
     GLOBAL_VALUATIONS.dcf = {
