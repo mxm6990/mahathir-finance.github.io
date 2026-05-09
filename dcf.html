@@ -893,170 +893,243 @@
             return '$' + val.toFixed(2);
         }
 
-        // ── DCF Calculation ──
-        document.getElementById('calculateBtn').addEventListener('click', function () {
-            var discountRate = parseFloat(document.getElementById('discountRate').value) / 100;
-            var terminalGrowth = parseFloat(document.getElementById('terminalGrowth').value) / 100;
-            var sharesOutstanding = parseFloat(document.getElementById('sharesOutstanding').value);
-            var currentPrice = parseFloat(document.getElementById('currentPrice').value);
-            var netDebt = parseFloat(document.getElementById('netDebt').value);
-
-            var cfInputs = document.querySelectorAll('.cf-input');
-            var cashFlows = [];
-            cfInputs.forEach(function (input) {
-                cashFlows.push(parseFloat(input.value) || 0);
-            });
-
-            if (discountRate <= terminalGrowth) {
-                alert('Discount rate must be greater than terminal growth rate.');
-                return;
-            }
-
-            if (cashFlows.length === 0) {
-                alert('Please add at least one year of cash flow projections.');
-                return;
-            }
-
-            var pvCashFlows = [];
-            var totalPvCf = 0;
-
-            for (var i = 0; i < cashFlows.length; i++) {
-                var year = i + 1;
-                var discountFactor = 1 / Math.pow(1 + discountRate, year);
-                var pv = cashFlows[i] * discountFactor;
-                pvCashFlows.push({
-                    year: year,
-                    cf: cashFlows[i],
-                    discountFactor: discountFactor,
-                    pv: pv
-                });
-                totalPvCf += pv;
-            }
-
-            var lastCf = cashFlows[cashFlows.length - 1];
-            var lastYear = cashFlows.length;
-            var terminalValue = (lastCf * (1 + terminalGrowth)) / (discountRate - terminalGrowth);
-            var pvTerminalValue = terminalValue / Math.pow(1 + discountRate, lastYear);
-
-            var enterpriseValue = totalPvCf + pvTerminalValue;
-            var equityValue = enterpriseValue - netDebt;
-            var intrinsicValue = equityValue / sharesOutstanding;
-
-            var margin = ((intrinsicValue - currentPrice) / currentPrice) * 100;
-
-            var verdictClass, verdictText;
-            if (margin > 15) {
-                verdictClass = 'undervalued';
-                verdictText = '<i class="bi bi-arrow-up-circle-fill"></i> Potentially Undervalued (' + margin.toFixed(1) + '% upside)';
-            } else if (margin < -15) {
-                verdictClass = 'overvalued';
-                verdictText = '<i class="bi bi-arrow-down-circle-fill"></i> Potentially Overvalued (' + Math.abs(margin).toFixed(1) + '% downside)';
-            } else {
-                verdictClass = 'fair';
-                verdictText = '<i class="bi bi-dash-circle-fill"></i> Fairly Valued (' + (margin >= 0 ? '+' : '') + margin.toFixed(1) + '%)';
-            }
-
-            // ── Build sensitivity table ──
-            var growthRates = [terminalGrowth - 0.01, terminalGrowth - 0.005, terminalGrowth, terminalGrowth + 0.005, terminalGrowth + 0.01];
-            var discountRates = [discountRate - 0.02, discountRate - 0.01, discountRate, discountRate + 0.01, discountRate + 0.02];
-
-            var sensRows = '';
-            for (var di = 0; di < discountRates.length; di++) {
-                sensRows += '<tr><td>' + fmtPercent(discountRates[di] * 100) + '</td>';
-                for (var gi = 0; gi < growthRates.length; gi++) {
-                    if (discountRates[di] <= growthRates[gi]) {
-                        sensRows += '<td>N/A</td>';
-                        continue;
-                    }
-                    var tv = (lastCf * (1 + growthRates[gi])) / (discountRates[di] - growthRates[gi]);
-                    var pvTv = tv / Math.pow(1 + discountRates[di], lastYear);
-                    var tPv = 0;
-                    for (var k = 0; k < cashFlows.length; k++) {
-                        tPv += cashFlows[k] / Math.pow(1 + discountRates[di], k + 1);
-                    }
-                    var sEv = tPv + pvTv;
-                    var sEq = sEv - netDebt;
-                    var sIv = sEq / sharesOutstanding;
-                    var isCenter = (di === 2 && gi === 2);
-                    sensRows += '<td' + (isCenter ? ' class="cell-highlight"' : '') + '>' + fmtPrice(sIv) + '</td>';
-                }
-                sensRows += '</tr>';
-            }
-
-            var sensHeaders = '<th>WACC \\ Growth</th>';
-            for (var gi = 0; gi < growthRates.length; gi++) {
-                sensHeaders += '<th>' + fmtPercent(growthRates[gi] * 100) + '</th>';
-            }
-
-            // ── Build schedule rows ──
-            var scheduleRows = '';
-            for (var i = 0; i < pvCashFlows.length; i++) {
-                var row = pvCashFlows[i];
-                scheduleRows += '<tr>' +
-                    '<td>Year ' + row.year + '</td>' +
-                    '<td>' + fmtMillions(row.cf) + '</td>' +
-                    '<td>' + row.discountFactor.toFixed(4) + '</td>' +
-                    '<td>' + fmtMillions(row.pv) + '</td>' +
-                    '</tr>';
-            }
-
-            // ── Render ──
+        // ── Helpers ──
+        function showError(msg) {
             var panel = document.getElementById('resultsPanel');
             panel.innerHTML =
-                '<div class="result-hero">' +
-                    '<div class="label">Intrinsic Value Per Share</div>' +
-                    '<div class="value">' + fmtPrice(intrinsicValue) + '</div>' +
-                    '<div class="verdict"><span class="verdict-tag ' + verdictClass + '">' + verdictText + '</span></div>' +
-                '</div>' +
-
-                '<div class="metrics-grid">' +
-                    '<div class="metric-card">' +
-                        '<div class="metric-label">Enterprise Value</div>' +
-                        '<div class="metric-value">' + fmtMoney(enterpriseValue * 1e6) + '</div>' +
-                        '<div class="metric-sub">PV of CFs + Terminal</div>' +
-                    '</div>' +
-                    '<div class="metric-card">' +
-                        '<div class="metric-label">Equity Value</div>' +
-                        '<div class="metric-value">' + fmtMoney(equityValue * 1e6) + '</div>' +
-                        '<div class="metric-sub">EV minus net debt</div>' +
-                    '</div>' +
-                    '<div class="metric-card">' +
-                        '<div class="metric-label">Terminal Value (PV)</div>' +
-                        '<div class="metric-value">' + fmtMoney(pvTerminalValue * 1e6) + '</div>' +
-                        '<div class="metric-sub">' + fmtPercent((pvTerminalValue / enterpriseValue) * 100) + ' of EV</div>' +
-                    '</div>' +
-                '</div>' +
-
-                '<div class="schedule-card">' +
-                    '<h3>Cash Flow Schedule</h3>' +
-                    '<table>' +
-                        '<thead><tr>' +
-                            '<th>Period</th><th>Free Cash Flow</th><th>Discount Factor</th><th>Present Value</th>' +
-                        '</tr></thead>' +
-                        '<tbody>' + scheduleRows +
-                            '<tr>' +
-                                '<td>Terminal</td>' +
-                                '<td>' + fmtMillions(terminalValue) + '</td>' +
-                                '<td>' + (1 / Math.pow(1 + discountRate, lastYear)).toFixed(4) + '</td>' +
-                                '<td>' + fmtMillions(pvTerminalValue) + '</td>' +
-                            '</tr>' +
-                        '</tbody>' +
-                        '<tfoot><tr>' +
-                            '<td>Total</td>' +
-                            '<td></td><td></td>' +
-                            '<td>' + fmtMillions(enterpriseValue) + '</td>' +
-                        '</tr></tfoot>' +
-                    '</table>' +
-                '</div>' +
-
-                '<div class="sensitivity-card">' +
-                    '<h3>Sensitivity Analysis</h3>' +
-                    '<p class="card-desc">Intrinsic value per share across different WACC and terminal growth rate assumptions</p>' +
-                    '<table>' +
-                        '<thead><tr>' + sensHeaders + '</tr></thead>' +
-                        '<tbody>' + sensRows + '</tbody>' +
-                    '</table>' +
+                '<div class="result-hero" style="border-color:rgba(248,113,113,0.3)">' +
+                    '<div style="color:var(--red);font-size:2rem;margin-bottom:0.75rem"><i class="bi bi-exclamation-triangle-fill"></i></div>' +
+                    '<div class="label" style="color:var(--red)">Validation Error</div>' +
+                    '<div style="color:var(--text-secondary);font-size:0.95rem;margin-top:0.5rem">' + msg + '</div>' +
                 '</div>';
+        }
+
+        function safeParseFloat(id) {
+            var el = document.getElementById(id);
+            if (!el) return NaN;
+            var raw = el.value.trim();
+            if (raw === '') return NaN;
+            return parseFloat(raw);
+        }
+
+        // ── DCF Calculation ──
+        document.getElementById('calculateBtn').addEventListener('click', function () {
+            try {
+                var discountRate = safeParseFloat('discountRate') / 100;
+                var terminalGrowth = safeParseFloat('terminalGrowth') / 100;
+                var sharesOutstanding = safeParseFloat('sharesOutstanding');
+                var currentPrice = safeParseFloat('currentPrice');
+                var netDebt = safeParseFloat('netDebt');
+
+                if (isNaN(discountRate) || isNaN(terminalGrowth)) {
+                    showError('Please enter valid numbers for Discount Rate and Terminal Growth Rate.');
+                    return;
+                }
+
+                if (isNaN(sharesOutstanding) || sharesOutstanding <= 0) {
+                    showError('Shares Outstanding must be a positive number.');
+                    return;
+                }
+
+                if (isNaN(currentPrice) || currentPrice < 0) {
+                    showError('Current Share Price must be zero or a positive number.');
+                    return;
+                }
+
+                if (isNaN(netDebt)) {
+                    showError('Please enter a valid number for Net Debt (can be negative if cash exceeds debt).');
+                    return;
+                }
+
+                if (discountRate <= 0) {
+                    showError('Discount Rate (WACC) must be greater than 0%.');
+                    return;
+                }
+
+                if (discountRate <= terminalGrowth) {
+                    showError('Discount Rate (' + (discountRate * 100).toFixed(1) + '%) must be greater than Terminal Growth Rate (' + (terminalGrowth * 100).toFixed(1) + '%).');
+                    return;
+                }
+
+                var cfInputs = document.querySelectorAll('.cf-input');
+                var cashFlows = [];
+                var hasInvalidCf = false;
+                cfInputs.forEach(function (input) {
+                    var val = input.value.trim();
+                    if (val === '' || isNaN(parseFloat(val))) {
+                        hasInvalidCf = true;
+                    }
+                    cashFlows.push(parseFloat(val) || 0);
+                });
+
+                if (cashFlows.length === 0) {
+                    showError('Please add at least one year of cash flow projections.');
+                    return;
+                }
+
+                if (hasInvalidCf) {
+                    showError('One or more Cash Flow fields are empty or contain invalid values. Please enter a number for each year.');
+                    return;
+                }
+
+                var pvCashFlows = [];
+                var totalPvCf = 0;
+
+                for (var i = 0; i < cashFlows.length; i++) {
+                    var year = i + 1;
+                    var discountFactor = 1 / Math.pow(1 + discountRate, year);
+                    var pv = cashFlows[i] * discountFactor;
+                    pvCashFlows.push({
+                        year: year,
+                        cf: cashFlows[i],
+                        discountFactor: discountFactor,
+                        pv: pv
+                    });
+                    totalPvCf += pv;
+                }
+
+                var lastCf = cashFlows[cashFlows.length - 1];
+                var lastYear = cashFlows.length;
+                var terminalValue = (lastCf * (1 + terminalGrowth)) / (discountRate - terminalGrowth);
+                var pvTerminalValue = terminalValue / Math.pow(1 + discountRate, lastYear);
+
+                var enterpriseValue = totalPvCf + pvTerminalValue;
+                var equityValue = enterpriseValue - netDebt;
+                var intrinsicValue = equityValue / sharesOutstanding;
+
+                if (!isFinite(intrinsicValue)) {
+                    showError('Calculation produced an invalid result. Please check your inputs — Shares Outstanding must be greater than zero.');
+                    return;
+                }
+
+                var margin = currentPrice > 0 ? ((intrinsicValue - currentPrice) / currentPrice) * 100 : 0;
+
+                var verdictClass, verdictText;
+                if (currentPrice <= 0) {
+                    verdictClass = 'fair';
+                    verdictText = '<i class="bi bi-dash-circle-fill"></i> Enter a share price to compare';
+                } else if (margin > 15) {
+                    verdictClass = 'undervalued';
+                    verdictText = '<i class="bi bi-arrow-up-circle-fill"></i> Potentially Undervalued (' + margin.toFixed(1) + '% upside)';
+                } else if (margin < -15) {
+                    verdictClass = 'overvalued';
+                    verdictText = '<i class="bi bi-arrow-down-circle-fill"></i> Potentially Overvalued (' + Math.abs(margin).toFixed(1) + '% downside)';
+                } else {
+                    verdictClass = 'fair';
+                    verdictText = '<i class="bi bi-dash-circle-fill"></i> Fairly Valued (' + (margin >= 0 ? '+' : '') + margin.toFixed(1) + '%)';
+                }
+
+                // ── Build sensitivity table ──
+                var growthRates = [terminalGrowth - 0.01, terminalGrowth - 0.005, terminalGrowth, terminalGrowth + 0.005, terminalGrowth + 0.01];
+                var discountRates = [discountRate - 0.02, discountRate - 0.01, discountRate, discountRate + 0.01, discountRate + 0.02];
+
+                var sensRows = '';
+                for (var di = 0; di < discountRates.length; di++) {
+                    sensRows += '<tr><td>' + fmtPercent(discountRates[di] * 100) + '</td>';
+                    for (var gi = 0; gi < growthRates.length; gi++) {
+                        if (discountRates[di] <= growthRates[gi] || discountRates[di] <= 0) {
+                            sensRows += '<td>N/A</td>';
+                            continue;
+                        }
+                        var tv = (lastCf * (1 + growthRates[gi])) / (discountRates[di] - growthRates[gi]);
+                        var pvTv = tv / Math.pow(1 + discountRates[di], lastYear);
+                        var tPv = 0;
+                        for (var k = 0; k < cashFlows.length; k++) {
+                            tPv += cashFlows[k] / Math.pow(1 + discountRates[di], k + 1);
+                        }
+                        var sEv = tPv + pvTv;
+                        var sEq = sEv - netDebt;
+                        var sIv = sEq / sharesOutstanding;
+                        var isCenter = (di === 2 && gi === 2);
+                        if (!isFinite(sIv)) {
+                            sensRows += '<td>N/A</td>';
+                        } else {
+                            sensRows += '<td' + (isCenter ? ' class="cell-highlight"' : '') + '>' + fmtPrice(sIv) + '</td>';
+                        }
+                    }
+                    sensRows += '</tr>';
+                }
+
+                var sensHeaders = '<th>WACC \\ Growth</th>';
+                for (var gi = 0; gi < growthRates.length; gi++) {
+                    sensHeaders += '<th>' + fmtPercent(growthRates[gi] * 100) + '</th>';
+                }
+
+                // ── Build schedule rows ──
+                var scheduleRows = '';
+                for (var i = 0; i < pvCashFlows.length; i++) {
+                    var row = pvCashFlows[i];
+                    scheduleRows += '<tr>' +
+                        '<td>Year ' + row.year + '</td>' +
+                        '<td>' + fmtMillions(row.cf) + '</td>' +
+                        '<td>' + row.discountFactor.toFixed(4) + '</td>' +
+                        '<td>' + fmtMillions(row.pv) + '</td>' +
+                        '</tr>';
+                }
+
+                // ── Render ──
+                var panel = document.getElementById('resultsPanel');
+                panel.innerHTML =
+                    '<div class="result-hero">' +
+                        '<div class="label">Intrinsic Value Per Share</div>' +
+                        '<div class="value">' + fmtPrice(intrinsicValue) + '</div>' +
+                        '<div class="verdict"><span class="verdict-tag ' + verdictClass + '">' + verdictText + '</span></div>' +
+                    '</div>' +
+
+                    '<div class="metrics-grid">' +
+                        '<div class="metric-card">' +
+                            '<div class="metric-label">Enterprise Value</div>' +
+                            '<div class="metric-value">' + fmtMoney(enterpriseValue * 1e6) + '</div>' +
+                            '<div class="metric-sub">PV of CFs + Terminal</div>' +
+                        '</div>' +
+                        '<div class="metric-card">' +
+                            '<div class="metric-label">Equity Value</div>' +
+                            '<div class="metric-value">' + fmtMoney(equityValue * 1e6) + '</div>' +
+                            '<div class="metric-sub">EV minus net debt</div>' +
+                        '</div>' +
+                        '<div class="metric-card">' +
+                            '<div class="metric-label">Terminal Value (PV)</div>' +
+                            '<div class="metric-value">' + fmtMoney(pvTerminalValue * 1e6) + '</div>' +
+                            '<div class="metric-sub">' + fmtPercent((pvTerminalValue / enterpriseValue) * 100) + ' of EV</div>' +
+                        '</div>' +
+                    '</div>' +
+
+                    '<div class="schedule-card">' +
+                        '<h3>Cash Flow Schedule</h3>' +
+                        '<table>' +
+                            '<thead><tr>' +
+                                '<th>Period</th><th>Free Cash Flow</th><th>Discount Factor</th><th>Present Value</th>' +
+                            '</tr></thead>' +
+                            '<tbody>' + scheduleRows +
+                                '<tr>' +
+                                    '<td>Terminal</td>' +
+                                    '<td>' + fmtMillions(terminalValue) + '</td>' +
+                                    '<td>' + (1 / Math.pow(1 + discountRate, lastYear)).toFixed(4) + '</td>' +
+                                    '<td>' + fmtMillions(pvTerminalValue) + '</td>' +
+                                '</tr>' +
+                            '</tbody>' +
+                            '<tfoot><tr>' +
+                                '<td>Total</td>' +
+                                '<td></td><td></td>' +
+                                '<td>' + fmtMillions(enterpriseValue) + '</td>' +
+                            '</tr></tfoot>' +
+                        '</table>' +
+                    '</div>' +
+
+                    '<div class="sensitivity-card">' +
+                        '<h3>Sensitivity Analysis</h3>' +
+                        '<p class="card-desc">Intrinsic value per share across different WACC and terminal growth rate assumptions</p>' +
+                        '<table>' +
+                            '<thead><tr>' + sensHeaders + '</tr></thead>' +
+                            '<tbody>' + sensRows + '</tbody>' +
+                        '</table>' +
+                    '</div>';
+
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            } catch (err) {
+                showError('An unexpected error occurred: ' + err.message + '. Please check your inputs and try again.');
+            }
         });
     </script>
 
